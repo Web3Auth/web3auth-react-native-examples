@@ -23,7 +23,7 @@ const clientId = "BPi5PB_UiIZ-cPz1GtV5i1I2iOSOHuimiXBI0e-Oe_u6X3oVAbCiAZOTEBtTXw
 const chainConfig = {
   chainNamespace: ChainNamespace.EIP155,
   chainId: "0xaa36a7",
-  rpcTarget: "https://1rpc.io/sepolia",
+  rpcTarget: "https://ethereum-sepolia-rpc.publicnode.com",
   // Avoid using public rpcTarget in production.
   // Use services like Infura, Quicknode etc
   displayName: "Ethereum Sepolia Testnet",
@@ -47,6 +47,7 @@ const web3auth = new Web3Auth(WebBrowser, EncryptedStorage, {
   // IMP END - Whitelist bundle ID
   network: WEB3AUTH_NETWORK.SAPPHIRE_MAINNET, // or other networks
   privateKeyProvider: ethereumPrivateKeyProvider,
+  enableLogging: true,
 });
 // IMP END - SDK Initialization
 
