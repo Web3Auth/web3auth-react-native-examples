@@ -11,9 +11,9 @@ import EncryptedStorage from "react-native-encrypted-storage";
 // IMP END - Quick Start
 
 const scheme = "web3authrnexample"; // Or your desired app redirection scheme
-// IMP START - Whitelist bundle ID
+// IMP START - Allowlist bundle ID
 const redirectUrl = `${scheme}://auth`;
-// IMP END - Whitelist bundle ID
+// IMP END - Allowlist bundle ID
 
 // IMP START - Dashboard Registration
 const clientId = "BPi5PB_UiIZ-cPz1GtV5i1I2iOSOHuimiXBI0e-Oe_u6X3oVAbCiAZOTEBtTXw4tsluTITPqA8zMsfxIKMjiqNQ"; // get from https://dashboard.web3auth.io
@@ -42,9 +42,9 @@ const ethereumPrivateKeyProvider = new EthereumPrivateKeyProvider({
 
 const web3auth = new Web3Auth(WebBrowser, EncryptedStorage, {
   clientId,
-  // IMP START - Whitelist bundle ID
+  // IMP START - Allowlist bundle ID
   redirectUrl,
-  // IMP END - Whitelist bundle ID
+  // IMP END - Allowlist bundle ID
   network: WEB3AUTH_NETWORK.SAPPHIRE_MAINNET, // or other networks
   privateKeyProvider: ethereumPrivateKeyProvider,
 });

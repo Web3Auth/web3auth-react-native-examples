@@ -13,13 +13,13 @@ import {EthereumPrivateKeyProvider} from '@web3auth/ethereum-provider';
 // IMP END - Quick Start
 import {ethers} from 'ethers';
 
-// IMP START - Whitelist bundle ID
+// IMP START - Allowlist bundle ID
 const redirectUrl =
 //@ts-ignore
   Constants.appOwnership == AppOwnership.Expo || Constants.appOwnership == AppOwnership.Guest
     ? Linking.createURL("web3auth", {})
     : Linking.createURL("web3auth", { scheme: "web3authexpoexample" });
-// IMP END - Whitelist bundle ID
+// IMP END - Allowlist bundle ID
 
 // IMP START - Dashboard Registration
 const clientId =
@@ -49,9 +49,9 @@ const ethereumPrivateKeyProvider = new EthereumPrivateKeyProvider({
 
 const web3auth = new Web3Auth(WebBrowser, SecureStore, {
   clientId,
-  // IMP START - Whitelist bundle ID
+  // IMP START - Allowlist bundle ID
   redirectUrl,
-  // IMP END - Whitelist bundle ID
+  // IMP END - Allowlist bundle ID
   network: WEB3AUTH_NETWORK.SAPPHIRE_MAINNET, // or other networks
   privateKeyProvider: ethereumPrivateKeyProvider,
 });
