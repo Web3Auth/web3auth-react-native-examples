@@ -13,12 +13,12 @@
 ## 📱 Platform Examples
 
 ### React Native
-- [Quick Start Example](./react-native/rn-bare-quick-start): Basic integration with EVM chains
-- [Auth0 Example](./react-native/rn-bare-auth0-example): Custom authentication with Auth0
-- [Firebase Example](./react-native/rn-bare-firebase-example): Integration with Firebase authentication
-- [Solana Example](./react-native/rn-bare-solana-example): Integration with Solana blockchain
-- [Aggregate Verifier Example](./react-native/rn-bare-aggregate-verifier-example): Multi-provider authentication
-- [Expo Example](./react-native/rn-expo-example): Integration in Expo framework
+- [Quick Start Example](./rn-bare-quick-start): Basic integration with EVM chains
+- [Auth0 Example](./rn-bare-auth0-example): Custom authentication with Auth0
+- [Firebase Example](./rn-bare-firebase-example): Integration with Firebase authentication
+- [Solana Example](./rn-bare-solana-example): Integration with Solana blockchain
+- [Aggregate Verifier Example](./rn-bare-aggregate-verifier-example): Multi-provider authentication
+- [Expo Example](./rn-expo-example): Integration in Expo framework
 
 ### iOS
 - [Quick Start Example](./ios/ios-quick-start): Basic integration with EVM chains
