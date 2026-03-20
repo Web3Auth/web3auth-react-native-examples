@@ -1,79 +1,44 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# [DEPRECATED] SFA React Native Bare Quick Start
 
-# Getting Started
+> **This example is deprecated.**
+>
+> The Single Factor Auth (SFA) / Core Kit SDK (`@web3auth/single-factor-auth`) is no longer the recommended integration path for React Native. Use the standard `@web3auth/react-native-sdk` instead.
+>
+> For an up-to-date quick start, see: [rn-bare-quick-start](../rn-bare-quick-start)
 
->**Note**: Make sure you have completed the [React Native - Environment Setup](https://reactnative.dev/docs/environment-setup) instructions till "Creating a new application" step, before proceeding.
+## Why is SFA deprecated?
 
-## Step 1: Start the Metro Server
+The SFA (Single Factor Auth) SDK was part of the legacy "Core Kit" product line, which has been superseded by the unified MetaMask Embedded Wallets SDK. The `@web3auth/react-native-sdk` (Plug and Play) provides the same non-custodial key generation with a simpler integration path and is actively maintained.
 
-First, you will need to start **Metro**, the JavaScript _bundler_ that ships _with_ React Native.
+## Migration
 
-To start Metro, run the following command from the _root_ of your React Native project:
+To migrate from SFA to the current SDK:
 
-```bash
-# using npm
-npm start
+1. Replace `@web3auth/single-factor-auth` with `@web3auth/react-native-sdk`.
+2. Replace `@toruslabs/customauth-react-native-sdk` (if used) with `@toruslabs/react-native-web-browser`.
+3. Replace `SFAWeb3Auth` / `Web3Auth` (SFA) instantiation with the new constructor pattern:
+   ```typescript
+   import Web3Auth, { WEB3AUTH_NETWORK } from "@web3auth/react-native-sdk";
+   import { EthereumPrivateKeyProvider } from "@web3auth/ethereum-provider";
 
-# OR using Yarn
-yarn start
-```
+   const web3auth = new Web3Auth(WebBrowser, EncryptedStorage, {
+     clientId: "YOUR_CLIENT_ID",
+     redirectUrl: "YOUR_SCHEME://auth",
+     network: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
+     privateKeyProvider: ethereumPrivateKeyProvider,
+   });
+   ```
+4. Replace `sfa.connect({ verifier, verifierId, idToken })` with:
+   ```typescript
+   await web3auth.login({ loginProvider: LOGIN_PROVIDER.GOOGLE });
+   // or for custom JWT:
+   await web3auth.login({ loginProvider: LOGIN_PROVIDER.JWT, extraLoginOptions: { ... } });
+   ```
 
-## Step 2: Start your Application
+## Resources
 
-Let Metro Bundler run in its _own_ terminal. Open a _new_ terminal from the _root_ of your React Native project. Run the following command to start your _Android_ or _iOS_ app:
-
-### For Android
-
-```bash
-# using npm
-npm run android
-
-# OR using Yarn
-yarn android
-```
-
-### For iOS
-
-```bash
-# using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
-```
-
-If everything is set up _correctly_, you should see your new app running in your _Android Emulator_ or _iOS Simulator_ shortly provided you have set up your emulator/simulator correctly.
-
-This is one way to run your app — you can also run it directly from within Android Studio and Xcode respectively.
-
-## Step 3: Modifying your App
-
-Now that you have successfully run the app, let's modify it.
-
-1. Open `App.tsx` in your text editor of choice and edit some lines.
-2. For **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Developer Menu** (<kbd>Ctrl</kbd> + <kbd>M</kbd> (on Window and Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (on macOS)) to see your changes!
-
-   For **iOS**: Hit <kbd>Cmd ⌘</kbd> + <kbd>R</kbd> in your iOS Simulator to reload the app and see your changes!
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [Introduction to React Native](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you can't get this to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+- [rn-bare-quick-start example](../rn-bare-quick-start) — current recommended starting point
+- [React Native SDK Reference](https://docs.metamask.io/embedded-wallets/sdk/react-native/)
+- [MetaMask Embedded Wallets Docs](https://docs.metamask.io/embedded-wallets/)
+- [Dashboard](https://dashboard.web3auth.io)
+- [Community (Builder Hub)](https://builder.metamask.io/c/embedded-wallets/5)

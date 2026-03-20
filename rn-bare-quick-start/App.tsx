@@ -126,13 +126,9 @@ export default function App() {
       return;
     }
     setConsole("Getting account");
-    // For ethers v5
-    // const ethersProvider = new ethers.providers.Web3Provider(this.provider);
-    const ethersProvider = new ethers.BrowserProvider(provider!);
+    const ethersProvider = new ethers.providers.Web3Provider(this.provider);
 
-    // For ethers v5
-    // const signer = ethersProvider.getSigner();
-    const signer = await ethersProvider.getSigner();
+    const signer = ethersProvider.getSigner();
 
     // Get user's Ethereum public address
     const address = signer.getAddress();
@@ -145,13 +141,9 @@ export default function App() {
       return;
     }
     setConsole("Fetching balance");
-    // For ethers v5
-    // const ethersProvider = new ethers.providers.Web3Provider(this.provider);
-    const ethersProvider = new ethers.BrowserProvider(provider!);
+    const ethersProvider = new ethers.providers.Web3Provider(this.provider);
 
-    // For ethers v5
-    // const signer = ethersProvider.getSigner();
-    const signer = await ethersProvider.getSigner();
+    const signer = ethersProvider.getSigner();
 
     // Get user's Ethereum public address
     const address = signer.getAddress();
@@ -173,13 +165,9 @@ export default function App() {
       return;
     }
     setConsole("Signing message");
-    // For ethers v5
-    // const ethersProvider = new ethers.providers.Web3Provider(this.provider);
-    const ethersProvider = new ethers.BrowserProvider(provider!);
+    const ethersProvider = new ethers.providers.Web3Provider(this.provider);
 
-    // For ethers v5
-    // const signer = ethersProvider.getSigner();
-    const signer = await ethersProvider.getSigner();
+    const signer = ethersProvider.getSigner();
     const originalMessage = "YOUR_MESSAGE";
 
     // Sign the message

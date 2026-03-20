@@ -1,79 +1,159 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# MetaMask Embedded Wallets — React Native Grouped Connections Example
 
-# Getting Started
+A bare React Native example demonstrating **Grouped Connections** (formerly called Aggregate Verifiers) — a Web3Auth feature that links multiple authentication methods so the same user always gets the **same wallet address**, regardless of which login method they use.
 
->**Note**: Make sure you have completed the [React Native - Environment Setup](https://reactnative.dev/docs/environment-setup) instructions till "Creating a new application" step, before proceeding.
+## What this example demonstrates
 
-## Step 1: Start the Metro Server
+- Configuring a **Grouped Connection** on the Web3Auth Dashboard
+- Linking Google, email passwordless (Auth0), and GitHub (Auth0) under a single connection group
+- Using the shared `verifier` + `verifierSubIdentifier` pattern in `loginConfig`
+- Same Ethereum wallet regardless of which login method is used
 
-First, you will need to start **Metro**, the JavaScript _bundler_ that ships _with_ React Native.
+## Why Grouped Connections?
 
-To start Metro, run the following command from the _root_ of your React Native project:
+Without grouping, a user who logs in with Google gets one wallet, and the same user logging in with their email gets a completely different wallet. Grouped Connections solve this by linking multiple sub-connections under a parent group connection, using a common identifier (such as `email`) to map users across providers.
+
+**Example:** Google (uses `email` as identifier) + Auth0 Email Passwordless (uses `email`) → same wallet.
+
+## Tech stack
+
+- React Native `0.74.x` (bare workflow)
+- `@web3auth/react-native-sdk` `^8.0.0`
+- `@web3auth/ethereum-provider` `^9.3.0`
+- `ethers` `^6.x`
+- `react-native-encrypted-storage`
+- `@toruslabs/react-native-web-browser`
+
+## Prerequisites
+
+- Node.js `>=18`
+- React Native development environment — [React Native CLI Quickstart](https://reactnative.dev/docs/environment-setup)
+- A [Web3Auth Dashboard](https://dashboard.web3auth.io) project
+
+## Dashboard Setup
+
+### Create a Grouped Connection
+
+1. Go to [dashboard.web3auth.io](https://dashboard.web3auth.io) and open your project.
+2. Under **Connections**, create a new **Grouped Connection**.
+3. Add **sub-connections** to the group (e.g. Google, Auth0 Email Passwordless, Auth0 GitHub).
+4. For each sub-connection, ensure the **user identifier field** maps to the same value across providers. For example:
+   - Google: use `email` (must be pre-set in Google sub-connection config)
+   - Auth0 Email Passwordless: use `email`
+   - Auth0 GitHub: use `email` (Auth0 GitHub should include the user's email in the JWT)
+5. Note the **Grouped Connection ID** and each **sub-connection ID**.
+6. Under **Allowed Origins**, add:
+   ```
+   web3authrnbareaggregateexample://auth
+   ```
+
+## Installation
 
 ```bash
-# using npm
-npm start
-
-# OR using Yarn
-yarn start
+git clone https://github.com/Web3Auth/web3auth-react-native-examples.git
+cd web3auth-react-native-examples/rn-bare-aggregate-verifier-example
+npm install
 ```
 
-## Step 2: Start your Application
-
-Let Metro Bundler run in its _own_ terminal. Open a _new_ terminal from the _root_ of your React Native project. Run the following command to start your _Android_ or _iOS_ app:
-
-### For Android
+### iOS
 
 ```bash
-# using npm
-npm run android
-
-# OR using Yarn
-yarn android
+cd ios && pod install && cd ..
 ```
 
-### For iOS
+## Configuration
+
+In `App.tsx`, each login method references the parent grouped connection via `verifier` and its own sub-connection via `verifierSubIdentifier`:
+
+```typescript
+const web3auth = new Web3Auth(WebBrowser, EncryptedStorage, {
+  clientId: "YOUR_WEB3AUTH_CLIENT_ID",
+  network: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
+  redirectUrl: "web3authrnbareaggregateexample://auth",
+  privateKeyProvider: ethereumPrivateKeyProvider,
+  loginConfig: {
+    google: {
+      verifier: "YOUR_GROUPED_CONNECTION_ID",         // parent group connection
+      verifierSubIdentifier: "YOUR_GOOGLE_SUB_ID",   // Google sub-connection ID
+      typeOfLogin: "google",
+      clientId: "YOUR_GOOGLE_OAUTH_CLIENT_ID",
+    },
+    auth0emailpasswordless: {
+      verifier: "YOUR_GROUPED_CONNECTION_ID",         // same parent group connection
+      verifierSubIdentifier: "YOUR_A0_EMAIL_SUB_ID", // Auth0 email sub-connection ID
+      typeOfLogin: "jwt",
+      clientId: "YOUR_AUTH0_CLIENT_ID",
+      jwtParameters: {
+        domain: "https://YOUR_AUTH0_DOMAIN",
+        verifierIdField: "email",
+        isVerifierIdCaseSensitive: false,
+      },
+    },
+  },
+});
+```
+
+> **Important**: All sub-connections must use the same user identifier value. If Google and Auth0 both return `email`, the same email always resolves to the same wallet.
+
+## Running the app
 
 ```bash
-# using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
+npm start        # start Metro
+npm run ios      # iOS
+npm run android  # Android
 ```
 
-If everything is set up _correctly_, you should see your new app running in your _Android Emulator_ or _iOS Simulator_ shortly provided you have set up your emulator/simulator correctly.
+## How it works
 
-This is one way to run your app — you can also run it directly from within Android Studio and Xcode respectively.
+### Login with Google
 
-## Step 3: Modifying your App
+```typescript
+await web3auth.login({ loginProvider: "google" });
+```
 
-Now that you have successfully run the app, let's modify it.
+### Login with email OTP (Auth0)
 
-1. Open `App.tsx` in your text editor of choice and edit some lines.
-2. For **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Developer Menu** (<kbd>Ctrl</kbd> + <kbd>M</kbd> (on Window and Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (on macOS)) to see your changes!
+```typescript
+await web3auth.login({
+  loginProvider: "auth0emailpasswordless",
+  extraLoginOptions: {
+    login_hint: email,
+    domain: "https://YOUR_AUTH0_DOMAIN",
+  },
+});
+```
 
-   For **iOS**: Hit <kbd>Cmd ⌘</kbd> + <kbd>R</kbd> in your iOS Simulator to reload the app and see your changes!
+Both methods produce the **same wallet address** for the user with the same email.
 
-## Congratulations! :tada:
+## Key concepts
 
-You've successfully run and modified your React Native App. :partying_face:
+**Grouped Connection** — A parent connection on the Web3Auth Dashboard that aggregates multiple sub-connections. It uses Shamir Secret Sharing across the sub-connection shares to produce the same key regardless of which login method was used.
 
-### Now what?
+**`verifier`** — Must be the Grouped Connection ID (the parent).
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [Introduction to React Native](https://reactnative.dev/docs/getting-started).
+**`verifierSubIdentifier`** — Must be the individual sub-connection ID within the group.
 
-# Troubleshooting
+**Identifier mapping** — The `verifierIdField` (e.g. `email`) must resolve to the **same value** across all sub-connections for a given user.
 
-If you can't get this to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+## Troubleshooting
 
-# Learn More
+**Different wallet addresses for different login methods**
+- Confirm all `verifier` fields use the exact same Grouped Connection ID.
+- Confirm the `verifierIdField` resolves to the same value (e.g. same email) across all providers.
 
-To learn more about React Native, take a look at the following resources:
+**`Verifier not found`**
+- The `verifier` and `verifierSubIdentifier` must exactly match what is configured on the dashboard (case-sensitive).
 
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+**Metro polyfill errors**
+- See [Metro Polyfill Troubleshooting](https://docs.metamask.io/embedded-wallets/troubleshooting/metro-issues/).
+
+## Resources
+
+- [MetaMask Embedded Wallets Docs](https://docs.metamask.io/embedded-wallets/)
+- [React Native SDK Reference](https://docs.metamask.io/embedded-wallets/sdk/react-native/)
+- [Dashboard](https://dashboard.web3auth.io)
+- [Community (Builder Hub)](https://builder.metamask.io/c/embedded-wallets/5)
+
+## License
+
+MIT — see [LICENSE](../LICENSE).

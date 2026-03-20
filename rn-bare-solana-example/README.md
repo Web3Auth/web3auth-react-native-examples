@@ -1,79 +1,162 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# MetaMask Embedded Wallets — React Native Solana Example
 
-# Getting Started
+A bare React Native example showing how to integrate MetaMask Embedded Wallets (Web3Auth) with the **Solana** blockchain using the built-in `SolanaPrivateKeyProvider`.
 
->**Note**: Make sure you have completed the [React Native - Environment Setup](https://reactnative.dev/docs/environment-setup) instructions till "Creating a new application" step, before proceeding.
+## What this example demonstrates
 
-## Step 1: Start the Metro Server
+- Using `@web3auth/solana-provider` (`SolanaPrivateKeyProvider`) instead of the EVM provider
+- Logging in with social providers (Google, email OTP)
+- Fetching Solana wallet address and SOL balance
+- Signing a Solana message and sending a transaction
+- Switching between Solana Devnet, Testnet, and Mainnet
 
-First, you will need to start **Metro**, the JavaScript _bundler_ that ships _with_ React Native.
+## Tech stack
 
-To start Metro, run the following command from the _root_ of your React Native project:
+- React Native `0.74.x` (bare workflow)
+- `@web3auth/react-native-sdk` `^8.0.0`
+- `@web3auth/solana-provider` `^9.3.0`
+- `@solana/web3.js`
+- `react-native-encrypted-storage`
+- `@toruslabs/react-native-web-browser`
+
+## Prerequisites
+
+- Node.js `>=18`
+- React Native development environment — [React Native CLI Quickstart](https://reactnative.dev/docs/environment-setup)
+- A [Web3Auth Dashboard](https://dashboard.web3auth.io) project
+
+## Dashboard Setup
+
+1. Go to [dashboard.web3auth.io](https://dashboard.web3auth.io) and create or open your project.
+2. Choose **Sapphire Devnet** for development or **Sapphire Mainnet** for production.
+3. Under **Allowed Origins**, add your redirect URL:
+   ```
+   solanarnexample://auth
+   ```
+4. Copy your **Client ID**.
+
+> **Note**: Sapphire Devnet and Mainnet are Web3Auth key-reconstruction networks — they are unrelated to Solana's devnet/testnet/mainnet. You choose the Solana cluster separately in `chainConfig`.
+
+## Installation
 
 ```bash
-# using npm
-npm start
-
-# OR using Yarn
-yarn start
+git clone https://github.com/Web3Auth/web3auth-react-native-examples.git
+cd web3auth-react-native-examples/rn-bare-solana-example
+npm install
 ```
 
-## Step 2: Start your Application
-
-Let Metro Bundler run in its _own_ terminal. Open a _new_ terminal from the _root_ of your React Native project. Run the following command to start your _Android_ or _iOS_ app:
-
-### For Android
+### iOS
 
 ```bash
-# using npm
-npm run android
-
-# OR using Yarn
-yarn android
+cd ios && pod install && cd ..
 ```
 
-### For iOS
+## Configuration
+
+In `App.tsx`, update the Client ID:
+
+```typescript
+const clientId = "YOUR_CLIENT_ID"; // from Web3Auth Dashboard
+```
+
+To switch Solana clusters, update `chainConfig`:
+
+```typescript
+const chainConfig = {
+  chainNamespace: ChainNamespace.SOLANA,
+  chainId: "0x1",                          // 0x1 Mainnet | 0x2 Testnet | 0x3 Devnet
+  rpcTarget: "https://api.mainnet-beta.solana.com",
+  displayName: "Solana Mainnet",
+  blockExplorerUrl: "https://explorer.solana.com",
+  ticker: "SOL",
+  tickerName: "Solana",
+};
+```
+
+## Running the app
 
 ```bash
-# using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
+npm start        # start Metro
+npm run ios      # iOS
+npm run android  # Android
 ```
 
-If everything is set up _correctly_, you should see your new app running in your _Android Emulator_ or _iOS Simulator_ shortly provided you have set up your emulator/simulator correctly.
+## How it works
 
-This is one way to run your app — you can also run it directly from within Android Studio and Xcode respectively.
+### Initialisation with Solana provider
 
-## Step 3: Modifying your App
+```typescript
+import { SolanaPrivateKeyProvider } from "@web3auth/solana-provider";
+import Web3Auth, { ChainNamespace, WEB3AUTH_NETWORK } from "@web3auth/react-native-sdk";
 
-Now that you have successfully run the app, let's modify it.
+const chainConfig = {
+  chainNamespace: ChainNamespace.SOLANA,
+  chainId: "0x2",
+  rpcTarget: "https://api.testnet.solana.com",
+  displayName: "Solana Testnet",
+  blockExplorerUrl: "https://explorer.solana.com",
+  ticker: "SOL",
+  tickerName: "Solana",
+};
 
-1. Open `App.tsx` in your text editor of choice and edit some lines.
-2. For **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Developer Menu** (<kbd>Ctrl</kbd> + <kbd>M</kbd> (on Window and Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (on macOS)) to see your changes!
+const privateKeyProvider = new SolanaPrivateKeyProvider({ config: { chainConfig } });
 
-   For **iOS**: Hit <kbd>Cmd ⌘</kbd> + <kbd>R</kbd> in your iOS Simulator to reload the app and see your changes!
+const web3auth = new Web3Auth(WebBrowser, EncryptedStorage, {
+  clientId: "YOUR_CLIENT_ID",
+  redirectUrl: "solanarnexample://auth",
+  network: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
+  privateKeyProvider,
+});
+```
 
-## Congratulations! :tada:
+### Login
 
-You've successfully run and modified your React Native App. :partying_face:
+```typescript
+await web3auth.login({ loginProvider: LOGIN_PROVIDER.GOOGLE });
+```
 
-### Now what?
+### Solana calls via `@solana/web3.js`
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [Introduction to React Native](https://reactnative.dev/docs/getting-started).
+```typescript
+import { Connection, PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
 
-# Troubleshooting
+// Get address from the provider
+const accounts = await web3auth.provider!.request({ method: "getAccounts" });
+const address = accounts[0];
 
-If you can't get this to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+// Get balance
+const connection = new Connection("https://api.testnet.solana.com");
+const balance = await connection.getBalance(new PublicKey(address));
+console.log(`${balance / LAMPORTS_PER_SOL} SOL`);
+```
 
-# Learn More
+## Solana chain IDs
 
-To learn more about React Native, take a look at the following resources:
+| Network | `chainId` | `rpcTarget` |
+|---|---|---|
+| Mainnet Beta | `0x1` | `https://api.mainnet-beta.solana.com` |
+| Testnet | `0x2` | `https://api.testnet.solana.com` |
+| Devnet | `0x3` | `https://api.devnet.solana.com` |
 
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+## Troubleshooting
+
+**`SolanaPrivateKeyProvider` not found**
+- Ensure `@web3auth/solana-provider` is installed and the import matches the installed version.
+
+**Redirect not firing after login**
+- Verify the scheme in `App.tsx` matches the URL added in the Web3Auth Dashboard.
+- For Android, check `AndroidManifest.xml`; for iOS, check `Info.plist`.
+
+**Metro polyfill errors**
+- See [Metro Polyfill Troubleshooting](https://docs.metamask.io/embedded-wallets/troubleshooting/metro-issues/).
+
+## Resources
+
+- [MetaMask Embedded Wallets Docs](https://docs.metamask.io/embedded-wallets/)
+- [React Native SDK Reference](https://docs.metamask.io/embedded-wallets/sdk/react-native/)
+- [Dashboard](https://dashboard.web3auth.io)
+- [Community (Builder Hub)](https://builder.metamask.io/c/embedded-wallets/5)
+
+## License
+
+MIT — see [LICENSE](../LICENSE).

@@ -1,166 +1,171 @@
-# Web3Auth React Native Quick Start Example
+# MetaMask Embedded Wallets — React Native Bare Quick Start
 
-This example demonstrates how to integrate Web3Auth into a React Native application using the Web3Auth React Native SDK. It provides a simple yet comprehensive example of implementing Web3Auth's authentication and blockchain functionality in a React Native app.
+A minimal bare React Native example showing how to integrate MetaMask Embedded Wallets (Web3Auth) with social logins (Google, email OTP) and interact with Ethereum using `ethers.js`.
 
-## 📝 Features
-- Social login integration (Google, Facebook, Twitter, etc.)
-- Ethereum wallet creation and management
-- Basic blockchain interactions
-- Secure key management
-- Cross-platform support (iOS & Android)
+## What this example demonstrates
 
-## 🔗 Live Demo
-Scan this QR code to try the example app:
-[Add QR code image here]
+- Initialising the `@web3auth/react-native-sdk` in a bare React Native app
+- Logging in with social providers (Google, email OTP)
+- Connecting the built-in EVM provider to `ethers.js`
+- Fetching wallet address, balance, and signing a message
+- Logging out and clearing session
 
-## 🚀 Getting Started
+## Tech stack
 
-### Prerequisites
-- Node.js 14+
-- React Native development environment set up ([React Native CLI Quickstart](https://reactnative.dev/docs/environment-setup))
-- [Web3Auth Dashboard](https://dashboard.web3auth.io) account
-- For iOS:
-  - Xcode 13+
-  - CocoaPods
-- For Android:
-  - Android Studio
-  - JDK 11+
+- React Native `0.74.x` (bare workflow)
+- `@web3auth/react-native-sdk` `^8.0.0`
+- `@web3auth/ethereum-provider` `^9.3.0`
+- `ethers` `^6.x`
+- `react-native-encrypted-storage` (session persistence)
+- `@toruslabs/react-native-web-browser` (OAuth in-app browser)
 
-### Installation
+## Prerequisites
 
-1. Clone the repository:
+- Node.js `>=18`
+- React Native development environment — follow the [React Native CLI Quickstart](https://reactnative.dev/docs/environment-setup)
+- Xcode (iOS) or Android Studio (Android)
+- A [Web3Auth Dashboard](https://dashboard.web3auth.io) project
+
+## Dashboard Setup
+
+1. Go to [dashboard.web3auth.io](https://dashboard.web3auth.io) and create a new project.
+2. Choose **Sapphire Devnet** for development (allows localhost / emulators) or **Sapphire Mainnet** for production.
+3. Under **Allowed Origins**, add your app's redirect URL scheme:
+   ```
+   web3authrnexample://auth
+   ```
+4. Copy the **Client ID** — you'll paste it into `App.tsx`.
+
+> **Critical**: Sapphire Devnet and Mainnet produce **different wallet addresses** for the same user. Never switch networks in production.
+
+## Installation
+
 ```bash
-git clone https://github.com/Web3Auth/web3auth-mobile-examples.git
-cd web3auth-mobile-examples/react-native/rn-bare-quick-start
-```
-
-2. Install dependencies:
-```bash
+git clone https://github.com/Web3Auth/web3auth-react-native-examples.git
+cd web3auth-react-native-examples/rn-bare-quick-start
 npm install
-# or
-yarn install
 ```
 
-3. Install iOS dependencies (iOS only):
+### iOS
+
 ```bash
 cd ios && pod install && cd ..
 ```
 
-4. Configure Web3Auth:
-   - Get your Client ID from the [Web3Auth Dashboard](https://dashboard.web3auth.io)
-   - Update the Client ID in `App.tsx`:
-   ```typescript
-   const web3auth = new Web3Auth(
-     new Web3AuthOptions({
-       clientId: "YOUR-CLIENT-ID", // Get from Web3Auth Dashboard
-       network: "testnet",
-     })
-   );
-   ```
+## Configuration
 
-5. Configure OAuth (for social logins):
-   - Follow the [OAuth Configuration Guide](https://web3auth.io/docs/guides/oauth-providers) to set up your providers
-   - Update your OAuth credentials in the Web3Auth Dashboard
+Open `App.tsx` and replace the placeholder Client ID with yours:
 
-### Running the App
+```typescript
+const clientId = "YOUR_CLIENT_ID"; // from dashboard.web3auth.io
+```
 
-#### iOS
+The redirect URL scheme is already set to `web3authrnexample://auth`. If you change it, update both `App.tsx` and the Android/iOS native config files, and re-add it in the dashboard.
+
+## Running the app
+
 ```bash
+# Start Metro
+npm start
+
+# iOS
 npm run ios
-# or
-yarn ios
-```
 
-#### Android
-```bash
+# Android
 npm run android
-# or
-yarn android
 ```
 
-## 💡 Implementation Details
+## How it works
 
-### Key Files
-- `App.tsx`: Main application file with Web3Auth integration
-- `web3auth/`: Directory containing Web3Auth configuration and utilities
-- `components/`: Reusable UI components
+### Initialisation
 
-### Core Features Implementation
+The SDK is initialised once at module level (outside the React component) with an `EthereumPrivateKeyProvider` for the target chain:
 
-1. **Initialization**
 ```typescript
-// Initialize Web3Auth
-const web3auth = new Web3Auth(
-  new Web3AuthOptions({
-    clientId: "YOUR-CLIENT-ID",
-    network: "testnet",
-  })
-);
-```
+import * as WebBrowser from "@toruslabs/react-native-web-browser";
+import { EthereumPrivateKeyProvider } from "@web3auth/ethereum-provider";
+import Web3Auth, { ChainNamespace, WEB3AUTH_NETWORK } from "@web3auth/react-native-sdk";
+import EncryptedStorage from "react-native-encrypted-storage";
 
-2. **Authentication**
-```typescript
-// Login
-await web3auth.login({
-  loginProvider: "google",
+const chainConfig = {
+  chainNamespace: ChainNamespace.EIP155,
+  chainId: "0xaa36a7",
+  rpcTarget: "https://rpc.ankr.com/eth_sepolia",
+  displayName: "Ethereum Sepolia Testnet",
+  blockExplorerUrl: "https://sepolia.etherscan.io",
+  ticker: "ETH",
+  tickerName: "Ethereum",
+};
+
+const ethereumPrivateKeyProvider = new EthereumPrivateKeyProvider({
+  config: { chainConfig },
 });
 
-// Logout
+const web3auth = new Web3Auth(WebBrowser, EncryptedStorage, {
+  clientId: "YOUR_CLIENT_ID",
+  redirectUrl: "web3authrnexample://auth",
+  network: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET, // switch to SAPPHIRE_MAINNET for production
+  privateKeyProvider: ethereumPrivateKeyProvider,
+});
+```
+
+### Login
+
+```typescript
+await web3auth.login({ loginProvider: LOGIN_PROVIDER.GOOGLE });
+// or email OTP:
+await web3auth.login({ loginProvider: LOGIN_PROVIDER.EMAIL_PASSWORDLESS, extraLoginOptions: { login_hint: email } });
+```
+
+### Blockchain calls
+
+```typescript
+import { ethers } from "ethers";
+
+const ethersProvider = new ethers.BrowserProvider(web3auth.provider!);
+const signer = await ethersProvider.getSigner();
+const address = await signer.getAddress();
+const balance = await ethersProvider.getBalance(address);
+```
+
+### Logout
+
+```typescript
 await web3auth.logout();
 ```
 
-3. **Blockchain Interactions**
-```typescript
-// Get user info
-const userInfo = await web3auth.getUserInfo();
+## Polyfills
 
-// Get accounts
-const provider = await web3auth.provider;
-const web3 = new Web3(provider);
-const accounts = await web3.eth.getAccounts();
+React Native requires Node.js built-ins to be polyfilled for the SDK to work. The required setup is in:
+
+- `metro.config.js` — maps `crypto`, `stream`, and other modules to browser-compatible polyfills
+- `globals.js` (or `index.js`) — imports `react-native-get-random-values` and `react-native-quick-crypto` before any other app code
+
+Do not remove these — the SDK will fail to initialise without them.
+
+## Troubleshooting
+
+**Build errors after install**
+
+```bash
+# Android
+cd android && ./gradlew clean && cd ..
+
+# iOS
+cd ios && pod deintegrate && pod install && cd ..
 ```
 
-## 🔒 Security Considerations
+**OAuth redirect not working** — Verify the scheme in `App.tsx` matches the URL you added to the dashboard. For Android, check `AndroidManifest.xml`; for iOS, check `Info.plist`.
 
-- Private keys are securely managed by Web3Auth
-- Social login credentials are handled through OAuth
-- Session management follows security best practices
-- Secure storage implementation for persistent auth
+**Metro polyfill errors** — See [Metro Polyfill Troubleshooting](https://docs.metamask.io/embedded-wallets/troubleshooting/metro-issues/).
 
-## 🛠️ Troubleshooting
+## Resources
 
-### Common Issues
+- [MetaMask Embedded Wallets Docs](https://docs.metamask.io/embedded-wallets/)
+- [React Native SDK Reference](https://docs.metamask.io/embedded-wallets/sdk/react-native/)
+- [Dashboard](https://dashboard.web3auth.io)
+- [Community (Builder Hub)](https://builder.metamask.io/c/embedded-wallets/5)
 
-1. **Build Errors**
-   - Clean the build:
-     ```bash
-     cd android && ./gradlew clean && cd ..
-     cd ios && pod deintegrate && pod install && cd ..
-     ```
+## License
 
-2. **OAuth Configuration**
-   - Verify OAuth credentials in Web3Auth Dashboard
-   - Check URL scheme configuration
-   - Validate OAuth provider setup
-
-3. **Network Issues**
-   - Check internet connectivity
-   - Verify network configuration in Web3Auth setup
-   - Ensure proper SSL/TLS configuration
-
-## 📚 Resources
-
-- [Web3Auth Documentation](https://web3auth.io/docs)
-- [React Native SDK Reference](https://web3auth.io/docs/sdk/pnp/react-native)
-- [Integration Builder](https://web3auth.io/docs/integration-builder)
-- [OAuth Setup Guide](https://web3auth.io/docs/guides/oauth-providers)
-
-## 🤝 Support
-
-- [Discord](https://discord.gg/web3auth)
-- [GitHub Issues](https://github.com/Web3Auth/web3auth-mobile-examples/issues)
-- [Web3Auth Support](https://web3auth.io/docs/troubleshooting/support)
-
-## 📄 License
-
-This example is available under the MIT License. See the [LICENSE](../../LICENSE) file for more info.
+MIT — see [LICENSE](../LICENSE).
