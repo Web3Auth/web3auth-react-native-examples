@@ -13,7 +13,7 @@
     "@web3auth/ethereum-provider": "^9.3.0",
     "@web3auth/single-factor-auth": "^9.1.0",
     "base-64": "^1.0.0",
-    "bn.js": "^5.2.1",
+    "bn.js": "^5.2.3",
     "buffer": "^6.0.3",
     "crypto-browserify": "^3.12.1",
     "empty-module": "^0.0.2",
@@ -29,7 +29,7 @@
     "path-browserify": "^1.0.1",
     "process": "^0.11.10",
     "react": "18.2.0",
-    "react-native": "0.71.8",
+    "react-native": "0.84.1",
     "react-native-auth0": "^2.17.4",
     "react-native-quick-crypto": "^0.7.5",
     "stream-browserify": "^3.0.0"
