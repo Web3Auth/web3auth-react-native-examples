@@ -1,158 +1,103 @@
-# MetaMask Embedded Wallets — React Native Grouped Connections Example
+# MetaMask Embedded Wallets — React Native Bare Grouped Connections Example
 
-A bare React Native example demonstrating **Grouped Connections** (formerly called Aggregate Verifiers) — a Web3Auth feature that links multiple authentication methods so the same user always gets the **same wallet address**, regardless of which login method they use.
+Demonstrates **Grouped Connections** (formerly "aggregate verifiers"): multiple login methods that all resolve to the **same wallet address** for the same user.
+
+Without grouping, `Google login` and `Email OTP login` produce completely different wallets. Grouped Connections fix that by linking sub-connections under one shared key namespace.
 
 ## What this example demonstrates
 
-- Configuring a **Grouped Connection** on the Web3Auth Dashboard
-- Linking Google, email passwordless (Auth0), and GitHub (Auth0) under a single connection group
-- Using the shared `verifier` + `verifierSubIdentifier` pattern in `loginConfig`
-- Same Ethereum wallet regardless of which login method is used
+- Three login buttons (Google, Email OTP via Auth0, GitHub via Auth0) sharing `groupedAuthConnectionId: "aggregate-sapphire"`
+- Each method logs the same user into the same Ethereum wallet
+- Full split structure: `LoginView`, `HomeView`, `Console`, `lib/evm.ts`
+- The `authConnectionId` + `groupedAuthConnectionId` pattern (replaces `loginConfig.verifierSubIdentifier`)
 
-## Why Grouped Connections?
+## File tour
 
-Without grouping, a user who logs in with Google gets one wallet, and the same user logging in with their email gets a completely different wallet. Grouped Connections solve this by linking multiple sub-connections under a parent group connection, using a common identifier (such as `email`) to map users across providers.
-
-**Example:** Google (uses `email` as identifier) + Auth0 Email Passwordless (uses `email`) → same wallet.
+| File | What it does |
+|---|---|
+| `web3authConfig.ts` | The **only file you edit** — Client ID, redirect URL, network, chain config |
+| `lib/evm.ts` | Pure EVM helpers (`getAddress`, `getBalance`, `signMessage`) — no React |
+| `components/LoginView.tsx` | Three login buttons — each passes `authConnectionId` + `groupedAuthConnectionId` |
+| `components/HomeView.tsx` | All post-login actions — blockchain calls, wallet UI, MFA, disconnect |
+| `components/Console.tsx` | Dumb scrollable output box — `<Console output={...} />` |
+| `App.tsx` | `<Web3AuthProvider>` + `Screen` that switches between Login/Home |
+| `index.js` | Entry point — `@web3auth/react-native-sdk/setup` must be the very first import |
+| `metro.config.js` | `withWeb3Auth()` sets up all polyfill aliases |
 
 ## Tech stack
 
 - React Native `0.74.x` (bare workflow)
-- `@web3auth/react-native-sdk` `^8.0.0`
-- `@web3auth/ethereum-provider` `^9.3.0`
+- `@web3auth/react-native-sdk` `^8.1.0`
 - `ethers` `^6.x`
-- `react-native-encrypted-storage`
-- `@toruslabs/react-native-web-browser`
 
 ## Prerequisites
 
-- Node.js `>=18`
-- React Native development environment — [React Native CLI Quickstart](https://reactnative.dev/docs/environment-setup)
-- A [Web3Auth Dashboard](https://dashboard.web3auth.io) project
+- Node.js `>=18`, React Native CLI environment, Xcode / Android Studio
+- A [Web3Auth Dashboard](https://dashboard.web3auth.io) project with a Grouped Connection configured
 
-## Dashboard Setup
+## Dashboard setup
 
-### Create a Grouped Connection
-
-1. Go to [dashboard.web3auth.io](https://dashboard.web3auth.io) and open your project.
-2. Under **Connections**, create a new **Grouped Connection**.
-3. Add **sub-connections** to the group (e.g. Google, Auth0 Email Passwordless, Auth0 GitHub).
-4. For each sub-connection, ensure the **user identifier field** maps to the same value across providers. For example:
-   - Google: use `email` (must be pre-set in Google sub-connection config)
-   - Auth0 Email Passwordless: use `email`
-   - Auth0 GitHub: use `email` (Auth0 GitHub should include the user's email in the JWT)
-5. Note the **Grouped Connection ID** and each **sub-connection ID**.
-6. Under **Allowed Origins**, add:
+1. Create a project at [dashboard.web3auth.io](https://dashboard.web3auth.io).
+2. Under **Connections**, create three individual connections:
+   - `w3a-google` — Google social login
+   - `w3a-a0-email-passwordless` — Auth0 email OTP (verifier ID field: `email`)
+   - `w3a-a0-github` — Auth0 GitHub (verifier ID field: `email`)
+3. Create a **Grouped Connection** named `aggregate-sapphire` and add all three as sub-connections.
+   The shared verifier ID field (`email`) is what links the Google and Auth0 identities.
+4. Under **Allowed Origins**, add:
    ```
    web3authrnbareaggregateexample://auth
    ```
+5. Copy the **Client ID** into `web3authConfig.ts`.
+
+> **Why `email` as the shared field?**  Google's JWT has an `email` claim. Auth0's JWT also returns an `email` claim. Using `email` as the shared verifier ID means `alice@gmail.com` via Google == `alice@gmail.com` via Auth0 Email OTP → same wallet.
 
 ## Installation
 
 ```bash
-git clone https://github.com/Web3Auth/web3auth-react-native-examples.git
-cd web3auth-react-native-examples/rn-bare-aggregate-verifier-example
+cd rn-bare-aggregate-verifier-example
 npm install
-```
-
-### iOS
-
-```bash
+# iOS
 cd ios && pod install && cd ..
 ```
-
-## Configuration
-
-In `App.tsx`, each login method references the parent grouped connection via `verifier` and its own sub-connection via `verifierSubIdentifier`:
-
-```typescript
-const web3auth = new Web3Auth(WebBrowser, EncryptedStorage, {
-  clientId: "YOUR_WEB3AUTH_CLIENT_ID",
-  network: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
-  redirectUrl: "web3authrnbareaggregateexample://auth",
-  privateKeyProvider: ethereumPrivateKeyProvider,
-  loginConfig: {
-    google: {
-      verifier: "YOUR_GROUPED_CONNECTION_ID",         // parent group connection
-      verifierSubIdentifier: "YOUR_GOOGLE_SUB_ID",   // Google sub-connection ID
-      typeOfLogin: "google",
-      clientId: "YOUR_GOOGLE_OAUTH_CLIENT_ID",
-    },
-    auth0emailpasswordless: {
-      verifier: "YOUR_GROUPED_CONNECTION_ID",         // same parent group connection
-      verifierSubIdentifier: "YOUR_A0_EMAIL_SUB_ID", // Auth0 email sub-connection ID
-      typeOfLogin: "jwt",
-      clientId: "YOUR_AUTH0_CLIENT_ID",
-      jwtParameters: {
-        domain: "https://YOUR_AUTH0_DOMAIN",
-        verifierIdField: "email",
-        isVerifierIdCaseSensitive: false,
-      },
-    },
-  },
-});
-```
-
-> **Important**: All sub-connections must use the same user identifier value. If Google and Auth0 both return `email`, the same email always resolves to the same wallet.
 
 ## Running the app
 
 ```bash
-npm start        # start Metro
-npm run ios      # iOS
-npm run android  # Android
+npm start
+npm run ios      # or npm run android
 ```
 
 ## How it works
 
-### Login with Google
+### Login (`components/LoginView.tsx`)
 
 ```typescript
-await web3auth.login({ loginProvider: "google" });
-```
-
-### Login with email OTP (Auth0)
-
-```typescript
-await web3auth.login({
-  loginProvider: "auth0emailpasswordless",
-  extraLoginOptions: {
-    login_hint: email,
-    domain: "https://YOUR_AUTH0_DOMAIN",
-  },
+// All three calls share the same groupedAuthConnectionId.
+// The SDK routes each through its own sub-connection but combines
+// them into one key derivation path.
+connectTo({
+  authConnection: AUTH_CONNECTION.GOOGLE,
+  authConnectionId: "w3a-google",
+  groupedAuthConnectionId: "aggregate-sapphire", // ← the grouping key
 });
 ```
 
-Both methods produce the **same wallet address** for the user with the same email.
+### After login
 
-## Key concepts
-
-**Grouped Connection** — A parent connection on the Web3Auth Dashboard that aggregates multiple sub-connections. It uses Shamir Secret Sharing across the sub-connection shares to produce the same key regardless of which login method was used.
-
-**`verifier`** — Must be the Grouped Connection ID (the parent).
-
-**`verifierSubIdentifier`** — Must be the individual sub-connection ID within the group.
-
-**Identifier mapping** — The `verifierIdField` (e.g. `email`) must resolve to the **same value** across all sub-connections for a given user.
+The wallet address returned by `getAddress(provider!)` is **identical** no matter which of the three buttons was used, as long as the user's email is the same across providers.
 
 ## Troubleshooting
 
-**Different wallet addresses for different login methods**
-- Confirm all `verifier` fields use the exact same Grouped Connection ID.
-- Confirm the `verifierIdField` resolves to the same value (e.g. same email) across all providers.
+**Different addresses for the same user** — Check that the `groupedAuthConnectionId` is identical across all `connectTo` calls, that the Grouped Connection on the Dashboard includes all sub-connections, and that the verifier ID field resolves to the same value across providers.
 
-**`Verifier not found`**
-- The `verifier` and `verifierSubIdentifier` must exactly match what is configured on the dashboard (case-sensitive).
-
-**Metro polyfill errors**
-- See [Metro Polyfill Troubleshooting](https://docs.metamask.io/embedded-wallets/troubleshooting/metro-issues/).
+**Metro errors** — See [Metro Polyfill Troubleshooting](https://docs.metamask.io/embedded-wallets/troubleshooting/metro-issues/).
 
 ## Resources
 
 - [MetaMask Embedded Wallets Docs](https://docs.metamask.io/embedded-wallets/)
-- [React Native SDK Reference](https://docs.metamask.io/embedded-wallets/sdk/react-native/)
+- [Grouped Connections Guide](https://docs.metamask.io/embedded-wallets/authentication/grouped-connections/)
 - [Dashboard](https://dashboard.web3auth.io)
-- [Community (Builder Hub)](https://builder.metamask.io/c/embedded-wallets/5)
 
 ## License
 

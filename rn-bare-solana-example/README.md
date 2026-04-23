@@ -1,161 +1,117 @@
-# MetaMask Embedded Wallets — React Native Solana Example
+# MetaMask Embedded Wallets — React Native Bare Solana Example
 
-A bare React Native example showing how to integrate MetaMask Embedded Wallets (Web3Auth) with the **Solana** blockchain using the built-in `SolanaPrivateKeyProvider`.
+Shows how to use MetaMask Embedded Wallets with **Solana**. The SDK automatically derives an ed25519 keypair from the user's key shares and exposes it as a `TransactionSigner` from `@solana/signers`. No `SolanaPrivateKeyProvider` or `@web3auth/solana-provider` is needed.
 
 ## What this example demonstrates
 
-- Using `@web3auth/solana-provider` (`SolanaPrivateKeyProvider`) instead of the EVM provider
-- Logging in with social providers (Google, email OTP)
-- Fetching Solana wallet address and SOL balance
-- Signing a Solana message and sending a transaction
-- Switching between Solana Devnet, Testnet, and Mainnet
+- Configuring a Solana chain via the `chains` array (`chainNamespace: CHAIN_NAMESPACES.SOLANA`)
+- Accessing the `TransactionSigner` from `web3Auth.signer` after login
+- Getting the Solana address, balance (via `@solana/web3.js` `Connection`), and signing a message
+- Full split structure: `LoginView`, `HomeView`, `Console`, `lib/solana.ts`
+
+## File tour
+
+| File | What it does |
+|---|---|
+| `web3authConfig.ts` | The **only file you edit** — Client ID, redirect URL, network, Solana chain config |
+| `lib/solana.ts` | Pure Solana helpers: `getSolanaAddress`, `getSolanaBalance`, `signSolanaMessage` |
+| `components/LoginView.tsx` | Email OTP login — same pattern works for any `AUTH_CONNECTION` |
+| `components/HomeView.tsx` | Accesses `web3Auth.signer` as `TransactionSigner`, calls `lib/solana.ts` helpers |
+| `components/Console.tsx` | Dumb scrollable output box — `<Console output={...} />` |
+| `App.tsx` | `<Web3AuthProvider>` + `Screen` that switches between Login/Home |
+| `index.js` | Entry point — `@web3auth/react-native-sdk/setup` must be the very first import |
+| `metro.config.js` | `withWeb3Auth()` sets up all polyfill aliases |
 
 ## Tech stack
 
 - React Native `0.74.x` (bare workflow)
-- `@web3auth/react-native-sdk` `^8.0.0`
-- `@web3auth/solana-provider` `^9.3.0`
-- `@solana/web3.js`
-- `react-native-encrypted-storage`
-- `@toruslabs/react-native-web-browser`
+- `@web3auth/react-native-sdk` `^8.1.0`
+- `@solana/web3.js` `^1.x`
 
 ## Prerequisites
 
-- Node.js `>=18`
-- React Native development environment — [React Native CLI Quickstart](https://reactnative.dev/docs/environment-setup)
+- Node.js `>=18`, React Native CLI environment, Xcode / Android Studio
 - A [Web3Auth Dashboard](https://dashboard.web3auth.io) project
 
-## Dashboard Setup
+## Dashboard setup
 
-1. Go to [dashboard.web3auth.io](https://dashboard.web3auth.io) and create or open your project.
-2. Choose **Sapphire Devnet** for development or **Sapphire Mainnet** for production.
-3. Under **Allowed Origins**, add your redirect URL:
+1. Create a project at [dashboard.web3auth.io](https://dashboard.web3auth.io).
+2. Under **Allowed Origins**, add:
    ```
    solanarnexample://auth
    ```
-4. Copy your **Client ID**.
-
-> **Note**: Sapphire Devnet and Mainnet are Web3Auth key-reconstruction networks — they are unrelated to Solana's devnet/testnet/mainnet. You choose the Solana cluster separately in `chainConfig`.
+3. Copy the **Client ID** into `web3authConfig.ts`.
+4. Under **Chains**, configure a Solana chain (or rely on the default from `web3AuthConfig.ts`).
 
 ## Installation
 
 ```bash
-git clone https://github.com/Web3Auth/web3auth-react-native-examples.git
-cd web3auth-react-native-examples/rn-bare-solana-example
+cd rn-bare-solana-example
 npm install
-```
-
-### iOS
-
-```bash
+# iOS
 cd ios && pod install && cd ..
-```
-
-## Configuration
-
-In `App.tsx`, update the Client ID:
-
-```typescript
-const clientId = "YOUR_CLIENT_ID"; // from Web3Auth Dashboard
-```
-
-To switch Solana clusters, update `chainConfig`:
-
-```typescript
-const chainConfig = {
-  chainNamespace: ChainNamespace.SOLANA,
-  chainId: "0x1",                          // 0x1 Mainnet | 0x2 Testnet | 0x3 Devnet
-  rpcTarget: "https://api.mainnet-beta.solana.com",
-  displayName: "Solana Mainnet",
-  blockExplorerUrl: "https://explorer.solana.com",
-  ticker: "SOL",
-  tickerName: "Solana",
-};
 ```
 
 ## Running the app
 
 ```bash
-npm start        # start Metro
-npm run ios      # iOS
-npm run android  # Android
+npm start
+npm run ios      # or npm run android
 ```
 
 ## How it works
 
-### Initialisation with Solana provider
+### Chain config (`web3authConfig.ts`)
 
 ```typescript
-import { SolanaPrivateKeyProvider } from "@web3auth/solana-provider";
-import Web3Auth, { ChainNamespace, WEB3AUTH_NETWORK } from "@web3auth/react-native-sdk";
-
-const chainConfig = {
-  chainNamespace: ChainNamespace.SOLANA,
-  chainId: "0x2",
-  rpcTarget: "https://api.testnet.solana.com",
-  displayName: "Solana Testnet",
-  blockExplorerUrl: "https://explorer.solana.com",
-  ticker: "SOL",
-  tickerName: "Solana",
-};
-
-const privateKeyProvider = new SolanaPrivateKeyProvider({ config: { chainConfig } });
-
-const web3auth = new Web3Auth(WebBrowser, EncryptedStorage, {
-  clientId: "YOUR_CLIENT_ID",
-  redirectUrl: "solanarnexample://auth",
-  network: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
-  privateKeyProvider,
-});
+chains: [
+  {
+    chainNamespace: CHAIN_NAMESPACES.SOLANA,
+    chainId: "0x2",  // Testnet
+    rpcTarget: "https://api.testnet.solana.com",
+    ...
+  },
+],
+defaultChainId: "0x2",
 ```
 
-### Login
+The SDK detects the `SOLANA` namespace and creates a Solana provider automatically. No `SolanaPrivateKeyProvider` is needed.
+
+### Accessing the signer (`components/HomeView.tsx`)
 
 ```typescript
-await web3auth.login({ loginProvider: LOGIN_PROVIDER.GOOGLE });
+const { web3Auth } = useWeb3Auth();
+// After login, web3Auth.signer is a KeyPairSigner (TransactionSigner)
+const solanaSigner = web3Auth?.signer as TransactionSigner | null;
 ```
 
-### Solana calls via `@solana/web3.js`
+### Blockchain calls (`lib/solana.ts`)
 
 ```typescript
 import { Connection, PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
 
-// Get address from the provider
-const accounts = await web3auth.provider!.request({ method: "getAccounts" });
-const address = accounts[0];
+export function getSolanaAddress(signer: TransactionSigner): string {
+  return String(signer.address); // Address is base58 string at runtime
+}
 
-// Get balance
-const connection = new Connection("https://api.testnet.solana.com");
-const balance = await connection.getBalance(new PublicKey(address));
-console.log(`${balance / LAMPORTS_PER_SOL} SOL`);
+export async function getSolanaBalance(signer: TransactionSigner, rpcUrl: string): Promise<string> {
+  const connection = new Connection(rpcUrl, "confirmed");
+  const lamports = await connection.getBalance(new PublicKey(getSolanaAddress(signer)));
+  return `${(lamports / LAMPORTS_PER_SOL).toFixed(4)} SOL`;
+}
 ```
-
-## Solana chain IDs
-
-| Network | `chainId` | `rpcTarget` |
-|---|---|---|
-| Mainnet Beta | `0x1` | `https://api.mainnet-beta.solana.com` |
-| Testnet | `0x2` | `https://api.testnet.solana.com` |
-| Devnet | `0x3` | `https://api.devnet.solana.com` |
 
 ## Troubleshooting
 
-**`SolanaPrivateKeyProvider` not found**
-- Ensure `@web3auth/solana-provider` is installed and the import matches the installed version.
+**`@solana/signers` types not found** — The package is a transitive dependency of `@web3auth/react-native-sdk`. Run `npm install` and check that your `node_modules/@solana/signers` folder exists.
 
-**Redirect not firing after login**
-- Verify the scheme in `App.tsx` matches the URL added in the Web3Auth Dashboard.
-- For Android, check `AndroidManifest.xml`; for iOS, check `Info.plist`.
-
-**Metro polyfill errors**
-- See [Metro Polyfill Troubleshooting](https://docs.metamask.io/embedded-wallets/troubleshooting/metro-issues/).
+**Metro errors** — See [Metro Polyfill Troubleshooting](https://docs.metamask.io/embedded-wallets/troubleshooting/metro-issues/).
 
 ## Resources
 
 - [MetaMask Embedded Wallets Docs](https://docs.metamask.io/embedded-wallets/)
-- [React Native SDK Reference](https://docs.metamask.io/embedded-wallets/sdk/react-native/)
+- [Solana Integration Guide](https://docs.metamask.io/embedded-wallets/blockchain/solana/)
 - [Dashboard](https://dashboard.web3auth.io)
-- [Community (Builder Hub)](https://builder.metamask.io/c/embedded-wallets/5)
 
 ## License
 

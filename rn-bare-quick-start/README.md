@@ -1,20 +1,31 @@
 # MetaMask Embedded Wallets — React Native Bare Quick Start
 
-A minimal bare React Native example showing how to integrate MetaMask Embedded Wallets (Web3Auth) with social logins (Google, email OTP) and interact with Ethereum using `ethers.js`.
+A minimal bare React Native example showing how to integrate MetaMask Embedded Wallets (Web3Auth) with email OTP login and interact with Ethereum using `ethers.js`.
 
 ## What this example demonstrates
 
-- Initialising the `@web3auth/react-native-sdk` in a bare React Native app
-- Logging in with social providers (Google, email OTP)
-- Connecting the built-in EVM provider to `ethers.js`
-- Fetching wallet address, balance, and signing a message
-- Logging out and clearing session
+- Wrapping your app in `<Web3AuthProvider>` (the new hooks-based API)
+- Logging in with email one-time password (`AUTH_CONNECTION.EMAIL_PASSWORDLESS`)
+- Reading wallet address and balance via `ethers.BrowserProvider`
+- Signing a message directly with the built-in EVM provider
+- Showing the Wallet Services UI overlay
+- Enabling and managing MFA
+- Logging out and clearing the session
+
+## File tour
+
+| File | What it does |
+|---|---|
+| `web3authConfig.ts` | The **only file you need to edit** — Client ID, redirect URL, network, chain config |
+| `lib/evm.ts` | Pure EVM helpers (`getAddress`, `getBalance`, `signMessage`) — no React, copy-paste friendly |
+| `App.tsx` | `<Web3AuthProvider>` wrapper + `HomeScreen` component that uses all the hooks |
+| `index.js` | Entry point — imports `@web3auth/react-native-sdk/setup` **first** (required for polyfills) |
+| `metro.config.js` | Metro bundler config — wraps with `withWeb3Auth()` for Node.js polyfills |
 
 ## Tech stack
 
 - React Native `0.74.x` (bare workflow)
-- `@web3auth/react-native-sdk` `^8.0.0`
-- `@web3auth/ethereum-provider` `^9.3.0`
+- `@web3auth/react-native-sdk` `^8.1.0` — hooks API (`useWeb3AuthConnect`, etc.)
 - `ethers` `^6.x`
 - `react-native-encrypted-storage` (session persistence)
 - `@toruslabs/react-native-web-browser` (OAuth in-app browser)
@@ -22,19 +33,19 @@ A minimal bare React Native example showing how to integrate MetaMask Embedded W
 ## Prerequisites
 
 - Node.js `>=18`
-- React Native development environment — follow the [React Native CLI Quickstart](https://reactnative.dev/docs/environment-setup)
+- React Native CLI setup — follow the [React Native CLI Quickstart](https://reactnative.dev/docs/environment-setup)
 - Xcode (iOS) or Android Studio (Android)
 - A [Web3Auth Dashboard](https://dashboard.web3auth.io) project
 
-## Dashboard Setup
+## Dashboard setup
 
 1. Go to [dashboard.web3auth.io](https://dashboard.web3auth.io) and create a new project.
-2. Choose **Sapphire Devnet** for development (allows localhost / emulators) or **Sapphire Mainnet** for production.
-3. Under **Allowed Origins**, add your app's redirect URL scheme:
+2. Choose **Sapphire Devnet** for development or **Sapphire Mainnet** for production.
+3. Under **Allowed Origins**, add:
    ```
    web3authrnexample://auth
    ```
-4. Copy the **Client ID** — you'll paste it into `App.tsx`.
+4. Copy the **Client ID** and paste it into `web3authConfig.ts`.
 
 > **Critical**: Sapphire Devnet and Mainnet produce **different wallet addresses** for the same user. Never switch networks in production.
 
@@ -52,96 +63,74 @@ npm install
 cd ios && pod install && cd ..
 ```
 
-## Configuration
-
-Open `App.tsx` and replace the placeholder Client ID with yours:
-
-```typescript
-const clientId = "YOUR_CLIENT_ID"; // from dashboard.web3auth.io
-```
-
-The redirect URL scheme is already set to `web3authrnexample://auth`. If you change it, update both `App.tsx` and the Android/iOS native config files, and re-add it in the dashboard.
-
 ## Running the app
 
 ```bash
 # Start Metro
 npm start
 
-# iOS
+# iOS (separate terminal)
 npm run ios
 
-# Android
+# Android (separate terminal)
 npm run android
 ```
 
 ## How it works
 
-### Initialisation
-
-The SDK is initialised once at module level (outside the React component) with an `EthereumPrivateKeyProvider` for the target chain:
+### 1. Configure (`web3authConfig.ts`)
 
 ```typescript
-import * as WebBrowser from "@toruslabs/react-native-web-browser";
-import { EthereumPrivateKeyProvider } from "@web3auth/ethereum-provider";
-import Web3Auth, { ChainNamespace, WEB3AUTH_NETWORK } from "@web3auth/react-native-sdk";
-import EncryptedStorage from "react-native-encrypted-storage";
-
-const chainConfig = {
-  chainNamespace: ChainNamespace.EIP155,
-  chainId: "0xaa36a7",
-  rpcTarget: "https://rpc.ankr.com/eth_sepolia",
-  displayName: "Ethereum Sepolia Testnet",
-  blockExplorerUrl: "https://sepolia.etherscan.io",
-  ticker: "ETH",
-  tickerName: "Ethereum",
+const web3AuthConfig: Web3AuthContextConfig = {
+  web3AuthOptions: {
+    clientId: "YOUR_CLIENT_ID",
+    redirectUrl: "web3authrnexample://auth",
+    network: WEB3AUTH_NETWORK.SAPPHIRE_MAINNET,
+    chains: [{ chainNamespace: CHAIN_NAMESPACES.EIP155, chainId: "0xaa36a7", rpcTarget: "..." }],
+    defaultChainId: "0xaa36a7",
+  },
 };
+```
 
-const ethereumPrivateKeyProvider = new EthereumPrivateKeyProvider({
-  config: { chainConfig },
+### 2. Wrap your app (`App.tsx`)
+
+```typescript
+<Web3AuthProvider webBrowser={WebBrowser} storage={EncryptedStorage} config={web3AuthConfig}>
+  <HomeScreen />
+</Web3AuthProvider>
+```
+
+### 3. Login (`HomeScreen` in `App.tsx`)
+
+```typescript
+const { connectTo } = useWeb3AuthConnect();
+await connectTo({
+  authConnection: AUTH_CONNECTION.EMAIL_PASSWORDLESS,
+  extraLoginOptions: { login_hint: email },
 });
-
-const web3auth = new Web3Auth(WebBrowser, EncryptedStorage, {
-  clientId: "YOUR_CLIENT_ID",
-  redirectUrl: "web3authrnexample://auth",
-  network: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET, // switch to SAPPHIRE_MAINNET for production
-  privateKeyProvider: ethereumPrivateKeyProvider,
-});
 ```
 
-### Login
+### 4. Blockchain calls (`lib/evm.ts`)
 
 ```typescript
-await web3auth.login({ loginProvider: LOGIN_PROVIDER.GOOGLE });
-// or email OTP:
-await web3auth.login({ loginProvider: LOGIN_PROVIDER.EMAIL_PASSWORDLESS, extraLoginOptions: { login_hint: email } });
+const { provider } = useWeb3Auth();
+const address = await getAddress(provider!);
+const balance = await getBalance(provider!);
+const sig = await signMessage(provider!, "Hello Web3Auth!");
 ```
 
-### Blockchain calls
+### 5. Logout
 
 ```typescript
-import { ethers } from "ethers";
-
-const ethersProvider = new ethers.BrowserProvider(web3auth.provider!);
-const signer = await ethersProvider.getSigner();
-const address = await signer.getAddress();
-const balance = await ethersProvider.getBalance(address);
-```
-
-### Logout
-
-```typescript
-await web3auth.logout();
+const { disconnect } = useWeb3AuthDisconnect();
+await disconnect();
 ```
 
 ## Polyfills
 
-React Native requires Node.js built-ins to be polyfilled for the SDK to work. The required setup is in:
+`index.js` imports `@web3auth/react-native-sdk/setup` as the very first line — this seeds the `crypto`, `Buffer`, and `URL` polyfills that the SDK requires. `metro.config.js` uses `withWeb3Auth()` to alias Node.js built-ins for Metro.
 
-- `metro.config.js` — maps `crypto`, `stream`, and other modules to browser-compatible polyfills
-- `globals.js` (or `index.js`) — imports `react-native-get-random-values` and `react-native-quick-crypto` before any other app code
-
-Do not remove these — the SDK will fail to initialise without them.
+Do not remove either — the SDK will fail to initialise without them.
 
 ## Troubleshooting
 
@@ -155,7 +144,7 @@ cd android && ./gradlew clean && cd ..
 cd ios && pod deintegrate && pod install && cd ..
 ```
 
-**OAuth redirect not working** — Verify the scheme in `App.tsx` matches the URL you added to the dashboard. For Android, check `AndroidManifest.xml`; for iOS, check `Info.plist`.
+**OAuth redirect not working** — Verify the scheme in `web3authConfig.ts` matches the URL you added to the Dashboard. For Android, check `AndroidManifest.xml`; for iOS, check `Info.plist`.
 
 **Metro polyfill errors** — See [Metro Polyfill Troubleshooting](https://docs.metamask.io/embedded-wallets/troubleshooting/metro-issues/).
 
