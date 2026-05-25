@@ -1,5 +1,5 @@
 import React from "react";
-import { Dimensions, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 interface ConsoleProps {
   output: string;
@@ -36,6 +36,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#f0f0f0",
     borderRadius: 8,
     padding: 10,
-    width: Dimensions.get("window").width - 40,
+    alignSelf: "stretch",
   },
 });

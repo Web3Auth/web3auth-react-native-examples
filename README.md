@@ -34,6 +34,16 @@ MetaMask Embedded Wallets (formerly Web3Auth Plug and Play) provides non-custodi
 
 > The deprecated SFA (Single Factor Auth / Core Kit) SDK has been removed. The bring-your-own-JWT pattern previously shown in SFA examples is now demonstrated by `rn-bare-firebase-example`.
 
+## How these examples are organized
+
+Examples follow one of two structures — pick the one that matches your goal:
+
+**Single-file (quick-start tier):** `rn-bare-quick-start` and `rn-expo-example` put everything in one `App.tsx`. Read it top to bottom and you have the full integration. Start here if you are new to Web3Auth.
+
+**Split into `components/` (feature tier):** `rn-bare-auth0-example`, `rn-bare-firebase-example`, `rn-bare-solana-example`, and `rn-bare-aggregate-verifier-example` separate the login screen (`LoginView.tsx`), logged-in screen (`HomeView.tsx`), and console output (`Console.tsx`). The login file is the _point_ of each example — it contains only what is unique to that auth method. Start with `App.tsx` (provider + routing), then open `components/LoginView.tsx` to see the auth-specific code.
+
+Both tiers use the same `web3authConfig.ts` for chain and SDK configuration, and the same `lib/evm.ts` (or `lib/solana.ts`) for blockchain calls.
+
 ## Getting Started
 
 1. Clone this repository:
@@ -65,6 +75,8 @@ MetaMask Embedded Wallets (formerly Web3Auth Plug and Play) provides non-custodi
 
 - [MetaMask Embedded Wallets Docs](https://docs.metamask.io/embedded-wallets/)
 - [React Native SDK Reference](https://docs.metamask.io/embedded-wallets/sdk/react-native/)
+- [v8 to v9 Migration Guide](https://docs.metamask.io/embedded-wallets/sdk/react-native/migration-guides/rn-v8-to-v9/)
+- [Hooks Reference](https://docs.metamask.io/embedded-wallets/sdk/react-native/hooks/)
 - [Dashboard](https://dashboard.web3auth.io)
 - [Metro Polyfill Troubleshooting](https://docs.metamask.io/embedded-wallets/troubleshooting/metro-issues/)
 - [Community (Builder Hub)](https://builder.metamask.io/c/embedded-wallets/5)

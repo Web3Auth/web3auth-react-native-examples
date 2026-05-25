@@ -10,6 +10,7 @@ import {
 } from "@web3auth/react-native-sdk";
 import React, { useState } from "react";
 import { Button, StyleSheet, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Console } from "./Console";
 import { getAddress, getBalance, signMessage } from "../lib/evm";
@@ -34,7 +35,7 @@ export function HomeView() {
   const log = (...args: unknown[]) => setOutput(JSON.stringify(args, null, 2));
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.buttonArea}>
         <Button title="Get User Info" onPress={() => log(userInfo)} />
 
@@ -60,15 +61,13 @@ export function HomeView() {
       </View>
 
       <Console output={output} />
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 50,
-    paddingBottom: 30,
     backgroundColor: "#fff",
   },
   buttonArea: {

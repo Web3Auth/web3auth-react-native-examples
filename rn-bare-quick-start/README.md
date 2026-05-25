@@ -25,7 +25,7 @@ A minimal bare React Native example showing how to integrate MetaMask Embedded W
 ## Tech stack
 
 - React Native `0.74.x` (bare workflow)
-- `@web3auth/react-native-sdk` `^8.1.0` — hooks API (`useWeb3AuthConnect`, etc.)
+- `@web3auth/react-native-sdk` `^9.0.0` — hooks API (`useWeb3AuthConnect`, etc.)
 - `ethers` `^6.x`
 - `react-native-encrypted-storage` (session persistence)
 - `@toruslabs/react-native-web-browser` (OAuth in-app browser)

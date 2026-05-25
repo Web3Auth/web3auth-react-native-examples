@@ -29,7 +29,7 @@ Replace the Firebase calls in `lib/firebase.ts` with any JWT provider (AWS Cogni
 ## Tech stack
 
 - React Native `0.74.x` (bare workflow)
-- `@web3auth/react-native-sdk` `^8.1.0`
+- `@web3auth/react-native-sdk` `^9.0.0`
 - `@react-native-firebase/auth` `^20.x`
 - `ethers` `^6.x`
 

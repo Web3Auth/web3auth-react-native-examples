@@ -1,6 +1,7 @@
 import { AUTH_CONNECTION, useWeb3AuthConnect } from "@web3auth/react-native-sdk";
 import React from "react";
 import { Button, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 /**
  * Grouped connections login screen.
@@ -45,13 +46,13 @@ export function LoginView() {
   // IMP END - Login
 
   return (
-    <View style={styles.loginArea}>
+    <SafeAreaView style={styles.loginArea}>
       <Text style={styles.heading}>Login with any method</Text>
       <Text style={styles.subheading}>Same account → same wallet address</Text>
       <Button title={loading ? "Logging in…" : "Login with Google"} onPress={loginWithGoogle} />
       <Button title={loading ? "Logging in…" : "Login with Email OTP"} onPress={loginWithEmailPasswordless} />
       <Button title={loading ? "Logging in…" : "Login with GitHub"} onPress={loginWithGitHub} />
-    </View>
+    </SafeAreaView>
   );
 }
 

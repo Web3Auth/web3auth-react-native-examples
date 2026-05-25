@@ -1,6 +1,7 @@
 import { AUTH_CONNECTION, useWeb3AuthConnect } from "@web3auth/react-native-sdk";
 import React, { useState } from "react";
 import { Button, StyleSheet, TextInput, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 /**
  * Login screen for the Solana example.
@@ -12,7 +13,7 @@ export function LoginView() {
 
   // IMP START - Login
   return (
-    <View style={styles.loginArea}>
+    <SafeAreaView style={styles.loginArea}>
       <TextInput
         style={styles.input}
         placeholder="Enter your email"
@@ -29,7 +30,7 @@ export function LoginView() {
           })
         }
       />
-    </View>
+    </SafeAreaView>
   );
   // IMP END - Login
 }

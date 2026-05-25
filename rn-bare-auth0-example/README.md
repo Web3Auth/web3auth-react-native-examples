@@ -28,7 +28,7 @@ The SDK handles the entire OAuth flow via an in-app browser — no `react-native
 ## Tech stack
 
 - React Native `0.74.x` (bare workflow)
-- `@web3auth/react-native-sdk` `^8.1.0`
+- `@web3auth/react-native-sdk` `^9.0.0`
 - `ethers` `^6.x`
 - `@toruslabs/react-native-web-browser`
 - `react-native-encrypted-storage`

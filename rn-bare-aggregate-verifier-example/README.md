@@ -27,7 +27,7 @@ Without grouping, `Google login` and `Email OTP login` produce completely differ
 ## Tech stack
 
 - React Native `0.74.x` (bare workflow)
-- `@web3auth/react-native-sdk` `^8.1.0`
+- `@web3auth/react-native-sdk` `^9.0.0`
 - `ethers` `^6.x`
 
 ## Prerequisites

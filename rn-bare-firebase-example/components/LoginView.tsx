@@ -1,12 +1,9 @@
 import { AUTH_CONNECTION, useWeb3AuthConnect } from "@web3auth/react-native-sdk";
 import React, { useState } from "react";
-import { Button, StyleSheet, Text, View } from "react-native";
+import { Alert, Button, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { getFirebaseIdToken } from "../lib/firebase";
-
-interface LoginViewProps {
-  onLog: (...args: unknown[]) => void;
-}
 
 /**
  * Bring-your-own-JWT login pattern with Firebase.
@@ -20,7 +17,7 @@ interface LoginViewProps {
  * This pattern works with any JWT provider (Firebase, AWS Cognito, etc.).
  * Just replace `getFirebaseIdToken()` with your provider's auth call.
  */
-export function LoginView({ onLog }: LoginViewProps) {
+export function LoginView() {
   const { connectTo, loading } = useWeb3AuthConnect();
   const [status, setStatus] = useState("");
 
@@ -30,7 +27,6 @@ export function LoginView({ onLog }: LoginViewProps) {
       setStatus("Signing in with Firebase…");
       // Step 1 — get a fresh Firebase ID token
       const idToken = await getFirebaseIdToken();
-      onLog("Firebase ID token obtained");
 
       setStatus("Connecting to Web3Auth…");
       // Step 2 — hand the token to Web3Auth
@@ -44,8 +40,8 @@ export function LoginView({ onLog }: LoginViewProps) {
           verifierIdField: "sub", // field in the JWT used as the unique user ID
         },
       });
-    } catch (e) {
-      onLog("Login error:", e);
+    } catch (e: unknown) {
+      Alert.alert("Login error", String(e));
     } finally {
       setStatus("");
     }
@@ -53,10 +49,10 @@ export function LoginView({ onLog }: LoginViewProps) {
   // IMP END - Login
 
   return (
-    <View style={styles.loginArea}>
+    <SafeAreaView style={styles.loginArea}>
       {status ? <Text style={styles.statusText}>{status}</Text> : null}
       <Button title={loading ? "Connecting…" : "Login with Firebase"} onPress={login} />
-    </View>
+    </SafeAreaView>
   );
 }
 

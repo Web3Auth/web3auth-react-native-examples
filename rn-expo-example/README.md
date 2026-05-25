@@ -22,7 +22,7 @@ An Expo-managed workflow example that mirrors `rn-bare-quick-start` but uses `ex
 ## Tech stack
 
 - Expo SDK `~51`
-- `@web3auth/react-native-sdk` `^8.1.0`
+- `@web3auth/react-native-sdk` `^9.0.0`
 - `expo-web-browser` + `expo-secure-store`
 - `ethers` `^6.x`
 

@@ -1,7 +1,16 @@
 import type { TransactionSigner } from "@solana/signers";
-import { CHAIN_NAMESPACES, useWeb3Auth, useWeb3AuthDisconnect, useWeb3AuthUser } from "@web3auth/react-native-sdk";
+import {
+  useEnableMFA,
+  useIdentityToken,
+  useManageMFA,
+  useWalletUI,
+  useWeb3Auth,
+  useWeb3AuthDisconnect,
+  useWeb3AuthUser,
+} from "@web3auth/react-native-sdk";
 import React, { useState } from "react";
 import { Button, StyleSheet, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Console } from "./Console";
 import { getSolanaAddress, getSolanaBalance, signSolanaMessage } from "../lib/solana";
@@ -16,11 +25,16 @@ import { SOLANA_RPC_URL } from "../web3authConfig";
  *     We cast it after checking `chainNamespace === SOLANA`.
  *
  * Blockchain helpers live in `lib/solana.ts` (pure functions — no React).
+ * Wallet Services (Wallet UI, MFA, Identity Token) are chain-agnostic and work on Solana.
  */
 export function HomeView() {
   const { web3Auth } = useWeb3Auth();
   const { disconnect } = useWeb3AuthDisconnect();
   const { userInfo } = useWeb3AuthUser();
+  const { showWalletUI } = useWalletUI();
+  const { getIdentityToken } = useIdentityToken();
+  const { enableMFA } = useEnableMFA();
+  const { manageMFA } = useManageMFA();
 
   const [output, setOutput] = useState("");
   const log = (...args: unknown[]) => setOutput(JSON.stringify(args, null, 2));
@@ -32,7 +46,7 @@ export function HomeView() {
   // IMP END - Blockchain Calls
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.buttonArea}>
         <Button title="Get User Info" onPress={() => log(userInfo)} />
 
@@ -60,21 +74,24 @@ export function HomeView() {
         />
         {/* IMP END - Blockchain Calls */}
 
+        <Button title="Get Identity Token" onPress={() => getIdentityToken().then(log)} />
+        <Button title="Show Wallet UI" onPress={() => showWalletUI()} />
+        <Button title="Enable MFA" onPress={enableMFA} />
+        <Button title="Manage MFA" onPress={manageMFA} />
+
         {/* IMP START - Logout */}
         <Button title="Log Out" onPress={disconnect} />
         {/* IMP END - Logout */}
       </View>
 
       <Console output={output} />
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 50,
-    paddingBottom: 30,
     backgroundColor: "#fff",
   },
   buttonArea: {

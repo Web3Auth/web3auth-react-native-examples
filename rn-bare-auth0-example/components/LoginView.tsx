@@ -1,10 +1,7 @@
 import { AUTH_CONNECTION, useWeb3AuthConnect } from "@web3auth/react-native-sdk";
 import React from "react";
-import { Button, StyleSheet, View } from "react-native";
-
-interface LoginViewProps {
-  onLog: (...args: unknown[]) => void;
-}
+import { Alert, Button, StyleSheet, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 /**
  * Renders the login screen.
@@ -15,7 +12,7 @@ interface LoginViewProps {
  *
  * Dashboard connection: authConnectionId = "w3a-auth0-demo"
  */
-export function LoginView({ onLog }: LoginViewProps) {
+export function LoginView() {
   const { connectTo, loading } = useWeb3AuthConnect();
 
   // IMP START - Login
@@ -30,13 +27,13 @@ export function LoginView({ onLog }: LoginViewProps) {
         // JWT field used as the unique user identifier
         verifierIdField: "sub",
       },
-    }).catch(onLog);
+    }).catch((e: unknown) => Alert.alert("Login error", String(e)));
   // IMP END - Login
 
   return (
-    <View style={styles.loginArea}>
+    <SafeAreaView style={styles.loginArea}>
       <Button title={loading ? "Logging in…" : "Login with Auth0"} onPress={loginWithAuth0} />
-    </View>
+    </SafeAreaView>
   );
 }
 

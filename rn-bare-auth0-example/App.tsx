@@ -3,8 +3,10 @@ import "@ethersproject/shims";
 import * as WebBrowser from "@toruslabs/react-native-web-browser";
 import { useWeb3Auth, Web3AuthProvider } from "@web3auth/react-native-sdk";
 import React from "react";
-import { Text, StyleSheet } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+// Storage for encrypted session data. On Expo, use `expo-secure-store` instead.
 import EncryptedStorage from "react-native-encrypted-storage";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { HomeView } from "./components/HomeView";
 import { LoginView } from "./components/LoginView";
@@ -17,10 +19,15 @@ function Screen() {
   // IMP END - SDK Initialization
 
   if (isInitializing) {
-    return <Text style={styles.status}>Initializing…</Text>;
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator />
+        <Text style={styles.initText}>Initializing…</Text>
+      </View>
+    );
   }
 
-  return isConnected ? <HomeView /> : <LoginView onLog={console.log} />;
+  return isConnected ? <HomeView /> : <LoginView />;
 }
 
 // ─── Root ─────────────────────────────────────────────────────────────────────
@@ -28,16 +35,22 @@ export default function App() {
   return (
     // IMP START - Setup Web3Auth Provider
     <Web3AuthProvider webBrowser={WebBrowser} storage={EncryptedStorage} config={web3AuthConfig}>
-      <Screen />
+      <SafeAreaProvider>
+        <Screen />
+      </SafeAreaProvider>
     </Web3AuthProvider>
     // IMP END - Setup Web3Auth Provider
   );
 }
 
 const styles = StyleSheet.create({
-  status: {
+  centered: {
     flex: 1,
-    textAlign: "center",
-    marginTop: 60,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  initText: {
+    marginTop: 12,
+    color: "#666",
   },
 });

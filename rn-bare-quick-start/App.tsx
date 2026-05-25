@@ -6,6 +6,7 @@ import {
   useEnableMFA,
   useIdentityToken,
   useManageMFA,
+  useSignatureRequest,
   useWalletUI,
   useWeb3Auth,
   useWeb3AuthConnect,
@@ -14,15 +15,31 @@ import {
   Web3AuthProvider,
 } from "@web3auth/react-native-sdk";
 import React, { useState } from "react";
-import { Button, Dimensions, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import {
+  ActivityIndicator,
+  Button,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+// Storage for encrypted session data. On Expo, use `expo-secure-store` instead.
 import EncryptedStorage from "react-native-encrypted-storage";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 import { getAddress, getBalance, signMessage } from "./lib/evm";
-import web3AuthConfig from "./web3authConfig";
+import { getWeb3AuthConfig } from "./web3authConfig";
+
+interface HomeScreenProps {
+  useAccountAbstraction: boolean;
+  onToggleAA: (value: boolean) => void;
+}
 
 // ─── Inner screen (rendered inside Web3AuthProvider) ──────────────────────────
 // IMP START - SDK Initialization
-function HomeScreen() {
+function HomeScreen({ useAccountAbstraction, onToggleAA }: HomeScreenProps) {
   // Auth state
   const { isConnected, isInitializing, provider } = useWeb3Auth();
   // Connect / disconnect
@@ -32,6 +49,7 @@ function HomeScreen() {
   const { userInfo } = useWeb3AuthUser();
   // Wallet Services helpers
   const { showWalletUI } = useWalletUI();
+  const { request } = useSignatureRequest();
   const { getIdentityToken } = useIdentityToken();
   const { enableMFA } = useEnableMFA();
   const { manageMFA } = useManageMFA();
@@ -43,14 +61,23 @@ function HomeScreen() {
 
   // ── Loading ──────────────────────────────────────────────────────────────────
   if (isInitializing) {
-    return <Text style={styles.status}>Initializing…</Text>;
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator />
+        <Text style={styles.initText}>Initializing…</Text>
+      </View>
+    );
   }
 
   // ── Login screen ─────────────────────────────────────────────────────────────
   if (!isConnected) {
     // IMP START - Login
     return (
-      <View style={styles.loginArea}>
+      <SafeAreaView style={styles.loginArea}>
+        <View style={styles.aaToggleRow}>
+          <Text>Use Account Abstraction:</Text>
+          <Switch onValueChange={onToggleAA} value={useAccountAbstraction} />
+        </View>
         <TextInput
           style={styles.input}
           placeholder="Enter your email"
@@ -67,14 +94,14 @@ function HomeScreen() {
             })
           }
         />
-      </View>
+      </SafeAreaView>
     );
     // IMP END - Login
   }
 
   // ── Logged-in screen ─────────────────────────────────────────────────────────
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.buttonArea}>
         <Button title="Get User Info" onPress={() => log(userInfo)} />
 
@@ -83,6 +110,10 @@ function HomeScreen() {
         <Button title="Get Balance" onPress={() => getBalance(provider!).then(log)} />
         <Button title="Sign Message" onPress={() => signMessage(provider!, "Hello Web3Auth!").then(log)} />
         {/* IMP END - Blockchain Calls */}
+
+        {/* IMP START - Signature Request */}
+        <Button title="Request Signature" onPress={() => request("personal_sign", ["Hello Web3Auth!", "0x"]).then(log)} />
+        {/* IMP END - Signature Request */}
 
         <Button title="Get Identity Token" onPress={() => getIdentityToken().then(log)} />
         <Button title="Show Wallet UI" onPress={() => showWalletUI()} />
@@ -100,16 +131,25 @@ function HomeScreen() {
           <Text selectable>{output}</Text>
         </ScrollView>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 // ─── Root – wraps everything in the Web3Auth provider ─────────────────────────
 export default function App() {
+  const [useAccountAbstraction, setUseAccountAbstraction] = useState(false);
+
   return (
     // IMP START - Setup Web3Auth Provider
-    <Web3AuthProvider webBrowser={WebBrowser} storage={EncryptedStorage} config={web3AuthConfig}>
-      <HomeScreen />
+    <Web3AuthProvider
+      key={String(useAccountAbstraction)}
+      webBrowser={WebBrowser}
+      storage={EncryptedStorage}
+      config={getWeb3AuthConfig(useAccountAbstraction)}
+    >
+      <SafeAreaProvider>
+        <HomeScreen useAccountAbstraction={useAccountAbstraction} onToggleAA={setUseAccountAbstraction} />
+      </SafeAreaProvider>
     </Web3AuthProvider>
     // IMP END - Setup Web3Auth Provider
   );
@@ -118,15 +158,27 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 50,
-    paddingBottom: 30,
     backgroundColor: "#fff",
+  },
+  centered: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  initText: {
+    marginTop: 12,
+    color: "#666",
   },
   loginArea: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
     gap: 16,
+  },
+  aaToggleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   input: {
     height: 44,
@@ -157,11 +209,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#f0f0f0",
     borderRadius: 8,
     padding: 10,
-    width: Dimensions.get("window").width - 40,
-  },
-  status: {
-    flex: 1,
-    textAlign: "center",
-    marginTop: 60,
+    alignSelf: "stretch",
   },
 });

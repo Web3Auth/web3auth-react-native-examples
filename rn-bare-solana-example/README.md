@@ -7,6 +7,7 @@ Shows how to use MetaMask Embedded Wallets with **Solana**. The SDK automaticall
 - Configuring a Solana chain via the `chains` array (`chainNamespace: CHAIN_NAMESPACES.SOLANA`)
 - Accessing the `TransactionSigner` from `web3Auth.signer` after login
 - Getting the Solana address, balance (via `@solana/web3.js` `Connection`), and signing a message
+- Wallet Services overlay (Wallet UI, MFA, Identity Token) — these are chain-agnostic and work on Solana
 - Full split structure: `LoginView`, `HomeView`, `Console`, `lib/solana.ts`
 
 ## File tour
@@ -16,7 +17,7 @@ Shows how to use MetaMask Embedded Wallets with **Solana**. The SDK automaticall
 | `web3authConfig.ts` | The **only file you edit** — Client ID, redirect URL, network, Solana chain config |
 | `lib/solana.ts` | Pure Solana helpers: `getSolanaAddress`, `getSolanaBalance`, `signSolanaMessage` |
 | `components/LoginView.tsx` | Email OTP login — same pattern works for any `AUTH_CONNECTION` |
-| `components/HomeView.tsx` | Accesses `web3Auth.signer` as `TransactionSigner`, calls `lib/solana.ts` helpers |
+| `components/HomeView.tsx` | Accesses `web3Auth.signer` as `TransactionSigner`, calls `lib/solana.ts` helpers, and exposes Wallet Services hooks |
 | `components/Console.tsx` | Dumb scrollable output box — `<Console output={...} />` |
 | `App.tsx` | `<Web3AuthProvider>` + `Screen` that switches between Login/Home |
 | `index.js` | Entry point — `@web3auth/react-native-sdk/setup` must be the very first import |
@@ -25,7 +26,7 @@ Shows how to use MetaMask Embedded Wallets with **Solana**. The SDK automaticall
 ## Tech stack
 
 - React Native `0.74.x` (bare workflow)
-- `@web3auth/react-native-sdk` `^8.1.0`
+- `@web3auth/react-native-sdk` `^9.0.0`
 - `@solana/web3.js` `^1.x`
 
 ## Prerequisites
