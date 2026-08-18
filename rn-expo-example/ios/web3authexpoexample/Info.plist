@@ -27,7 +27,7 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>com.web3authexpoexample</string>
+          <string>web3authexpoexample</string>
         </array>
       </dict>
     </array>

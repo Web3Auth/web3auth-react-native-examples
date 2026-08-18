@@ -1,80 +1,85 @@
-import type { TransactionSigner } from "@solana/signers";
 import {
+  useAccessToken,
+  useAuthTokenInfo,
   useEnableMFA,
-  useIdentityToken,
   useManageMFA,
+  useRefreshSession,
   useWalletUI,
   useWeb3Auth,
   useWeb3AuthDisconnect,
   useWeb3AuthUser,
 } from "@web3auth/react-native-sdk";
+import { useSignMessage, useSolanaWallet } from "@web3auth/react-native-sdk/solana";
 import React, { useState } from "react";
 import { Button, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Console } from "./Console";
-import { getSolanaAddress, getSolanaBalance, signSolanaMessage } from "../lib/solana";
-import { SOLANA_RPC_URL } from "../web3authConfig";
+import { getSolanaBalance } from "../lib/solana";
 
 /**
  * Logged-in screen for Solana.
  *
  * Key difference from EVM examples:
- *   - `provider` is the Solana JSON-RPC provider (not EIP-1193).
- *   - `web3Auth.signer` is a `TransactionSigner` from `@solana/signers`.
- *     We cast it after checking `chainNamespace === SOLANA`.
+ *   - `connection.solanaWallet` is a wallet-standard `Wallet` (not EIP-1193).
+ *   - `useSolanaWallet()` exposes `accounts` and an RPC client for balance reads.
+ *   - `useSignMessage()` signs via the Auth Solana wallet.
  *
- * Blockchain helpers live in `lib/solana.ts` (pure functions — no React).
- * Wallet Services (Wallet UI, MFA, Identity Token) are chain-agnostic and work on Solana.
+ * Wallet Services (Wallet UI, MFA, auth tokens) are chain-agnostic.
  */
 export function HomeView() {
-  const { web3Auth } = useWeb3Auth();
+  const { isAuthorized, accessToken } = useWeb3Auth();
   const { disconnect } = useWeb3AuthDisconnect();
   const { userInfo } = useWeb3AuthUser();
   const { showWalletUI } = useWalletUI();
-  const { getIdentityToken } = useIdentityToken();
+  const { getAccessToken } = useAccessToken();
+  const { getAuthTokenInfo } = useAuthTokenInfo();
+  const { refreshSession } = useRefreshSession();
   const { enableMFA } = useEnableMFA();
   const { manageMFA } = useManageMFA();
+  const { accounts, rpc } = useSolanaWallet();
+  const { signMessage } = useSignMessage();
 
   const [output, setOutput] = useState("");
   const log = (...args: unknown[]) => setOutput(JSON.stringify(args, null, 2));
 
-  // IMP START - Blockchain Calls
-  // The signer is a KeyPairSigner (TransactionSigner) when the chain is Solana.
-  // Access it via web3Auth.signer after connecting.
-  const solanaSigner = web3Auth?.signer as TransactionSigner | null;
-  // IMP END - Blockchain Calls
+  const solanaAddress = accounts?.[0] ?? null;
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.buttonArea}>
-        <Button title="Get User Info" onPress={() => log(userInfo)} />
+        <Button title="Get User Info" onPress={() => log({ userInfo, isAuthorized, accessToken })} />
 
         {/* IMP START - Blockchain Calls */}
         <Button
           title="Get Solana Address"
           onPress={() => {
-            if (!solanaSigner) return log("Not connected");
-            log(getSolanaAddress(solanaSigner));
+            if (!solanaAddress) return log("Not connected");
+            log(solanaAddress);
           }}
         />
         <Button
           title="Get Balance"
           onPress={async () => {
-            if (!solanaSigner) return log("Not connected");
-            log(await getSolanaBalance(solanaSigner, SOLANA_RPC_URL));
+            if (!solanaAddress || !rpc) return log("Not connected");
+            log(await getSolanaBalance(rpc, solanaAddress));
           }}
         />
         <Button
           title="Sign Message"
           onPress={async () => {
-            if (!solanaSigner) return log("Not connected");
-            log(await signSolanaMessage(solanaSigner, "Hello Web3Auth!"));
+            if (!solanaAddress) return log("Not connected");
+            log(await signMessage("Hello Web3Auth!"));
           }}
         />
         {/* IMP END - Blockchain Calls */}
 
-        <Button title="Get Identity Token" onPress={() => getIdentityToken().then(log)} />
+        <Button title="Get Access Token" onPress={() => getAccessToken().then(log)} />
+        <Button title="Get Auth Token Info" onPress={() => getAuthTokenInfo().then(log)} />
+        <Button
+          title="Refresh Session"
+          onPress={() => refreshSession().then((ok) => log(ok ? "session refreshed" : "session refresh failed"))}
+        />
         <Button title="Show Wallet UI" onPress={() => showWalletUI()} />
         <Button title="Enable MFA" onPress={enableMFA} />
         <Button title="Manage MFA" onPress={manageMFA} />

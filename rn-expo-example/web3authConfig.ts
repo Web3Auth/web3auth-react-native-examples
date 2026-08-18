@@ -1,9 +1,14 @@
-import { CHAIN_NAMESPACES, WEB3AUTH_NETWORK, type AccountAbstractionConfig, type Web3AuthContextConfig } from "@web3auth/react-native-sdk";
+import { WEB3AUTH_NETWORK, type AccountAbstractionConfig, type Web3AuthContextConfig } from "@web3auth/react-native-sdk";
+import Constants, { AppOwnership } from "expo-constants";
 import * as Linking from "expo-linking";
 
 // IMP START - Allowlist bundle ID
-// expo-linking resolves to the scheme registered in app.json at runtime
-const redirectUrl = Linking.createURL("web3auth", { scheme: "web3authrnexpoexample" });
+// Expo Go and dev-client builds resolve different redirect URLs — whitelist both in the dashboard.
+const redirectUrl =
+  // @ts-expect-error - Guest is not in the AppOwnership enum typings
+  Constants.appOwnership === AppOwnership.Expo || Constants.appOwnership === AppOwnership.Guest
+    ? Linking.createURL("web3auth", {})
+    : Linking.createURL("web3auth", { scheme: "web3authexpoexample" });
 // IMP END - Allowlist bundle ID
 
 // IMP START - Dashboard Registration
@@ -22,21 +27,7 @@ export const getWeb3AuthConfig = (withAA: boolean): Web3AuthContextConfig => ({
   web3AuthOptions: {
     clientId,
     redirectUrl,
-    network: WEB3AUTH_NETWORK.SAPPHIRE_MAINNET,
-    // IMP START - Chain Config
-    chains: [
-      {
-        chainNamespace: CHAIN_NAMESPACES.EIP155,
-        chainId: "0xaa36a7", // Ethereum Sepolia Testnet
-        rpcTarget: "https://rpc.ankr.com/eth_sepolia",
-        displayName: "Ethereum Sepolia Testnet",
-        blockExplorerUrl: "https://sepolia.etherscan.io",
-        ticker: "ETH",
-        tickerName: "Ethereum",
-      },
-    ],
-    defaultChainId: "0xaa36a7",
-    // IMP END - Chain Config
+    network: WEB3AUTH_NETWORK.SAPPHIRE_MAINNET,    
     // IMP START - Account Abstraction
     accountAbstractionConfig: withAA ? AAConfig : null,
     // IMP END - Account Abstraction

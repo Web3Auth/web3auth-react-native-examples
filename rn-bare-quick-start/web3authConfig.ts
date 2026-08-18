@@ -1,4 +1,4 @@
-import { CHAIN_NAMESPACES, WEB3AUTH_NETWORK, type AccountAbstractionConfig, type Web3AuthContextConfig } from "@web3auth/react-native-sdk";
+import { WEB3AUTH_NETWORK, type AccountAbstractionConfig, type Web3AuthContextConfig } from "@web3auth/react-native-sdk";
 
 // IMP START - Dashboard Registration
 // Get your Client ID from https://dashboard.web3auth.io
@@ -15,24 +15,8 @@ const AAConfig: AccountAbstractionConfig = {
 export const getWeb3AuthConfig = (withAA: boolean): Web3AuthContextConfig => ({
   web3AuthOptions: {
     clientId,
-    // IMP START - Allowlist bundle ID
     redirectUrl: "web3authrnexample://auth", // must be allowlisted in the Web3Auth Dashboard
-    // IMP END - Allowlist bundle ID
-    network: WEB3AUTH_NETWORK.SAPPHIRE_MAINNET, // use SAPPHIRE_DEVNET for testing
-    // IMP START - Chain Config
-    chains: [
-      {
-        chainNamespace: CHAIN_NAMESPACES.EIP155,
-        chainId: "0xaa36a7", // Ethereum Sepolia Testnet
-        rpcTarget: "https://rpc.ankr.com/eth_sepolia",
-        displayName: "Ethereum Sepolia Testnet",
-        blockExplorerUrl: "https://sepolia.etherscan.io",
-        ticker: "ETH",
-        tickerName: "Ethereum",
-      },
-    ],
-    defaultChainId: "0xaa36a7",
-    // IMP END - Chain Config
+    network: WEB3AUTH_NETWORK.SAPPHIRE_MAINNET,    
     // IMP START - Account Abstraction
     accountAbstractionConfig: withAA ? AAConfig : null,
     // IMP END - Account Abstraction

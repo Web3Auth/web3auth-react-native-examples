@@ -13,20 +13,6 @@ const web3AuthConfig: Web3AuthContextConfig = {
     redirectUrl: "web3authrnbarefirebase://auth",
     // IMP END - Allowlist bundle ID
     network: WEB3AUTH_NETWORK.SAPPHIRE_MAINNET,
-    // IMP START - Chain Config
-    chains: [
-      {
-        chainNamespace: CHAIN_NAMESPACES.EIP155,
-        chainId: "0xaa36a7", // Ethereum Sepolia Testnet
-        rpcTarget: "https://rpc.ankr.com/eth_sepolia",
-        displayName: "Ethereum Sepolia Testnet",
-        blockExplorerUrl: "https://sepolia.etherscan.io",
-        ticker: "ETH",
-        tickerName: "Ethereum",
-      },
-    ],
-    defaultChainId: "0xaa36a7",
-    // IMP END - Chain Config
   },
 };
 // IMP END - SDK Initialization

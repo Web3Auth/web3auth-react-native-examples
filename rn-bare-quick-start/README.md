@@ -1,13 +1,13 @@
 # MetaMask Embedded Wallets — React Native Bare Quick Start
 
-A minimal bare React Native example showing how to integrate MetaMask Embedded Wallets (Web3Auth) with email OTP login and interact with Ethereum using `ethers.js`.
+A minimal bare React Native example showing how to integrate MetaMask Embedded Wallets (Web3Auth) with email OTP login and interact with Ethereum using `viem`.
 
 ## What this example demonstrates
 
 - Wrapping your app in `<Web3AuthProvider>` (the new hooks-based API)
 - Logging in with email one-time password (`AUTH_CONNECTION.EMAIL_PASSWORDLESS`)
-- Reading wallet address and balance via `ethers.BrowserProvider`
-- Signing a message directly with the built-in EVM provider
+- Reading wallet address and balance via viem (`createWalletClient` / `createPublicClient`)
+- Signing a message with `connection.ethereumProvider`
 - Showing the Wallet Services UI overlay
 - Enabling and managing MFA
 - Logging out and clearing the session
@@ -25,10 +25,11 @@ A minimal bare React Native example showing how to integrate MetaMask Embedded W
 ## Tech stack
 
 - React Native `0.74.x` (bare workflow)
-- `@web3auth/react-native-sdk` `^9.0.0` — hooks API (`useWeb3AuthConnect`, etc.)
-- `ethers` `^6.x`
+- `@web3auth/react-native-sdk` `^10.0.0` — hooks API (`useWeb3AuthConnect`, etc.)
+- `viem` `^2.x`
 - `react-native-encrypted-storage` (session persistence)
 - `@toruslabs/react-native-web-browser` (OAuth in-app browser)
+- `@react-native-async-storage/async-storage` `^1.23.x` (peer for `@metamask/connect-multichain` via `@web3auth/react-native-sdk`)
 
 ## Prerequisites
 
@@ -113,10 +114,12 @@ await connectTo({
 ### 4. Blockchain calls (`lib/evm.ts`)
 
 ```typescript
-const { provider } = useWeb3Auth();
-const address = await getAddress(provider!);
-const balance = await getBalance(provider!);
-const sig = await signMessage(provider!, "Hello Web3Auth!");
+const { connection } = useWeb3Auth();
+const provider = connection?.ethereumProvider;
+if (!provider) return;
+const address = await getAddress(provider);
+const balance = await getBalance(provider);
+const sig = await signMessage(provider, "Hello Web3Auth!");
 ```
 
 ### 5. Logout
@@ -147,6 +150,8 @@ cd ios && pod deintegrate && pod install && cd ..
 **OAuth redirect not working** — Verify the scheme in `web3authConfig.ts` matches the URL you added to the Dashboard. For Android, check `AndroidManifest.xml`; for iOS, check `Info.plist`.
 
 **Metro polyfill errors** — See [Metro Polyfill Troubleshooting](https://docs.metamask.io/embedded-wallets/troubleshooting/metro-issues/).
+
+**`@react-native-async-storage/async-storage` not found** — Install it explicitly: `npm install @react-native-async-storage/async-storage@^1.23.1`. Required by `@metamask/connect-multichain` (pulled in via `@web3auth/react-native-sdk`). After installing, run `cd ios && pod install` for iOS.
 
 ## Resources
 

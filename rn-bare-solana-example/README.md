@@ -1,33 +1,36 @@
 # MetaMask Embedded Wallets — React Native Bare Solana Example
 
-Shows how to use MetaMask Embedded Wallets with **Solana**. The SDK automatically derives an ed25519 keypair from the user's key shares and exposes it as a `TransactionSigner` from `@solana/signers`. No `SolanaPrivateKeyProvider` or `@web3auth/solana-provider` is needed.
+Shows how to use MetaMask Embedded Wallets with **Solana**. The SDK derives an ed25519 keypair from the user's key shares and exposes it as a wallet-standard `Wallet` via `connection.solanaWallet`. Wrap the app in `SolanaProvider` from `@web3auth/react-native-sdk/solana` to use the signing hooks.
 
 ## What this example demonstrates
 
-- Configuring a Solana chain via the `chains` array (`chainNamespace: CHAIN_NAMESPACES.SOLANA`)
-- Accessing the `TransactionSigner` from `web3Auth.signer` after login
-- Getting the Solana address, balance (via `@solana/web3.js` `Connection`), and signing a message
-- Wallet Services overlay (Wallet UI, MFA, Identity Token) — these are chain-agnostic and work on Solana
+- Solana chain configuration from the Web3Auth Dashboard (fetched at SDK init)
+- Nesting `SolanaProvider` inside `Web3AuthProvider`
+- Accessing accounts and RPC via `useSolanaWallet()`
+- Signing messages via `useSignMessage()` from `@web3auth/react-native-sdk/solana`
+- Wallet Services overlay (Wallet UI, MFA, auth tokens) — chain-agnostic
 - Full split structure: `LoginView`, `HomeView`, `Console`, `lib/solana.ts`
 
 ## File tour
 
 | File | What it does |
 |---|---|
-| `web3authConfig.ts` | The **only file you edit** — Client ID, redirect URL, network, Solana chain config |
-| `lib/solana.ts` | Pure Solana helpers: `getSolanaAddress`, `getSolanaBalance`, `signSolanaMessage` |
+| `web3authConfig.ts` | Client ID, redirect URL, network, and optional `defaultChainId` |
+| `lib/solana.ts` | Pure Solana helper: `getSolanaBalance` using the RPC client from `useSolanaWallet()` |
 | `components/LoginView.tsx` | Email OTP login — same pattern works for any `AUTH_CONNECTION` |
-| `components/HomeView.tsx` | Accesses `web3Auth.signer` as `TransactionSigner`, calls `lib/solana.ts` helpers, and exposes Wallet Services hooks |
+| `components/HomeView.tsx` | Uses `useSolanaWallet` / `useSignMessage`, Wallet Services hooks, and `lib/solana.ts` |
 | `components/Console.tsx` | Dumb scrollable output box — `<Console output={...} />` |
-| `App.tsx` | `<Web3AuthProvider>` + `Screen` that switches between Login/Home |
-| `index.js` | Entry point — `@web3auth/react-native-sdk/setup` must be the very first import |
+| `App.tsx` | `<Web3AuthProvider>` + `<SolanaProvider>` + `Screen` that switches between Login/Home |
+| `index.js` | Entry point — `@web3auth/react-native-sdk/setup` and `polyfills.js` must load before other imports |
 | `metro.config.js` | `withWeb3Auth()` sets up all polyfill aliases |
 
 ## Tech stack
 
 - React Native `0.74.x` (bare workflow)
-- `@web3auth/react-native-sdk` `^9.0.0`
-- `@solana/web3.js` `^1.x`
+- `@web3auth/react-native-sdk` `^10.0.0`
+- `@solana/react-hooks` `^1.4.x` (peer for `/solana` subpath)
+- `@solana/kit` `^6.x`
+- `@react-native-async-storage/async-storage` `^1.23.x` (peer for `@metamask/connect-multichain` via `@solana/react-hooks`)
 
 ## Prerequisites
 
@@ -42,7 +45,17 @@ Shows how to use MetaMask Embedded Wallets with **Solana**. The SDK automaticall
    solanarnexample://auth
    ```
 3. Copy the **Client ID** into `web3authConfig.ts`.
-4. Under **Chains**, configure a Solana chain (or rely on the default from `web3AuthConfig.ts`).
+4. Under **Chains**, add a Solana chain (e.g. Solana Testnet). The SDK fetches chain config from the dashboard at init — no local `chains` array is needed.
+5. If you set `defaultChainId` in `web3authConfig.ts`, it must match a `chainId` from your dashboard Solana chain (e.g. `0x2` for Testnet).
+
+### iOS deep link
+
+`redirectUrl` uses the `solanarnexample` scheme. Register it in `ios/web3authrnexample/Info.plist` under `CFBundleURLTypes` (already included in this example). Rebuild the native app after changing it:
+
+```bash
+cd ios && pod install && cd ..
+npm run ios
+```
 
 ## Installation
 
@@ -62,49 +75,46 @@ npm run ios      # or npm run android
 
 ## How it works
 
-### Chain config (`web3authConfig.ts`)
+### Provider setup (`App.tsx`)
 
 ```typescript
-chains: [
-  {
-    chainNamespace: CHAIN_NAMESPACES.SOLANA,
-    chainId: "0x2",  // Testnet
-    rpcTarget: "https://api.testnet.solana.com",
-    ...
-  },
-],
-defaultChainId: "0x2",
+import { SolanaProvider } from "@web3auth/react-native-sdk/solana";
+
+<Web3AuthProvider webBrowser={WebBrowser} storage={EncryptedStorage} config={web3AuthConfig}>
+  <SolanaProvider>
+    <Screen />
+  </SolanaProvider>
+</Web3AuthProvider>
 ```
 
-The SDK detects the `SOLANA` namespace and creates a Solana provider automatically. No `SolanaPrivateKeyProvider` is needed.
+### Chain config (Dashboard)
 
-### Accessing the signer (`components/HomeView.tsx`)
+Configure Solana under **Chains** in the [Web3Auth Dashboard](https://dashboard.web3auth.io). The SDK merges that with `web3AuthOptions` during `init()`. Optionally set `defaultChainId` in `web3authConfig.ts` to select which dashboard chain to use on connect.
 
-```typescript
-const { web3Auth } = useWeb3Auth();
-// After login, web3Auth.signer is a KeyPairSigner (TransactionSigner)
-const solanaSigner = web3Auth?.signer as TransactionSigner | null;
-```
-
-### Blockchain calls (`lib/solana.ts`)
+### Solana hooks (`components/HomeView.tsx`)
 
 ```typescript
-import { Connection, PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { useSignMessage, useSolanaWallet } from "@web3auth/react-native-sdk/solana";
 
-export function getSolanaAddress(signer: TransactionSigner): string {
-  return String(signer.address); // Address is base58 string at runtime
-}
+const { accounts, rpc } = useSolanaWallet();
+const { signMessage } = useSignMessage();
 
-export async function getSolanaBalance(signer: TransactionSigner, rpcUrl: string): Promise<string> {
-  const connection = new Connection(rpcUrl, "confirmed");
-  const lamports = await connection.getBalance(new PublicKey(getSolanaAddress(signer)));
-  return `${(lamports / LAMPORTS_PER_SOL).toFixed(4)} SOL`;
-}
+const solanaAddress = accounts?.[0] ?? null;
+const balance = rpc && solanaAddress ? await getSolanaBalance(rpc, solanaAddress) : null;
+const signature = await signMessage("Hello Web3Auth!");
 ```
 
 ## Troubleshooting
 
-**`@solana/signers` types not found** — The package is a transitive dependency of `@web3auth/react-native-sdk`. Run `npm install` and check that your `node_modules/@solana/signers` folder exists.
+**`@solana/react-hooks` not found** — Install it explicitly: `npm install @solana/react-hooks@^1.4.1`. It is a required peer when importing `@web3auth/react-native-sdk/solana`.
+
+**`@react-native-async-storage/async-storage` not found** — Install it explicitly: `npm install @react-native-async-storage/async-storage@^1.23.1`. Required by `@metamask/connect-multichain` (pulled in via `@solana/react-hooks`). After installing, run `cd ios && pod install` for iOS.
+
+**`AbortSignal.timeout` / `window.addEventListener` errors** — These come from `@solana/react-hooks` and `@wallet-standard/app` expecting browser APIs. This example ships `polyfills.js`, imported in `index.js` right after `@web3auth/react-native-sdk/setup`. Keep that import order.
+
+**`Invalid provider Config, Please provide chain` (code 5008)** — The dashboard has no chain matching `defaultChainId` in `web3authConfig.ts`, or no Solana chain is configured on the dashboard. Add a Solana chain under **Chains** in the dashboard and ensure `defaultChainId` matches its `chainId` (or remove `defaultChainId` to use the first dashboard chain).
+
+**Login returns to the login screen / second login does nothing** — Ensure `solanarnexample://auth` is allowlisted in the dashboard and the iOS URL scheme is registered in `Info.plist`. Rebuild the native app after native changes. Enter your email again after a reload — the field resets on reload.
 
 **Metro errors** — See [Metro Polyfill Troubleshooting](https://docs.metamask.io/embedded-wallets/troubleshooting/metro-issues/).
 

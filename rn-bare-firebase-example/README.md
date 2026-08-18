@@ -29,9 +29,10 @@ Replace the Firebase calls in `lib/firebase.ts` with any JWT provider (AWS Cogni
 ## Tech stack
 
 - React Native `0.74.x` (bare workflow)
-- `@web3auth/react-native-sdk` `^9.0.0`
+- `@web3auth/react-native-sdk` `^10.0.0`
 - `@react-native-firebase/auth` `^20.x`
-- `ethers` `^6.x`
+- `viem` `^2.x`
+- `@react-native-async-storage/async-storage` `^1.23.x` (peer for `@metamask/connect-multichain` via `@web3auth/react-native-sdk`)
 
 ## Prerequisites
 
@@ -96,8 +97,10 @@ await connectTo({
 ### Step 3 — blockchain calls (`lib/evm.ts`)
 
 ```typescript
-const { provider } = useWeb3Auth();
-const address = await getAddress(provider!);
+const { connection } = useWeb3Auth();
+const provider = connection?.ethereumProvider;
+if (!provider) return;
+const address = await getAddress(provider);
 ```
 
 > **JWT `iat` constraint**: The `idToken` must have an `iat` (issued-at) claim within 60 seconds of the current time. Always call `getIdToken(true)` to force a fresh token on every login attempt.
@@ -107,6 +110,8 @@ const address = await getAddress(provider!);
 **`Error: Firebase app not found`** — Ensure `google-services.json` (Android) and `GoogleService-Info.plist` (iOS) are in the correct locations and you have run `pod install`.
 
 **Metro errors** — See [Metro Polyfill Troubleshooting](https://docs.metamask.io/embedded-wallets/troubleshooting/metro-issues/).
+
+**`@react-native-async-storage/async-storage` not found** — Install it explicitly: `npm install @react-native-async-storage/async-storage@^1.23.1`. Required by `@metamask/connect-multichain` (pulled in via `@web3auth/react-native-sdk`). After installing, run `cd ios && pod install` for iOS.
 
 ## Resources
 

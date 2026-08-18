@@ -27,8 +27,9 @@ Without grouping, `Google login` and `Email OTP login` produce completely differ
 ## Tech stack
 
 - React Native `0.74.x` (bare workflow)
-- `@web3auth/react-native-sdk` `^9.0.0`
-- `ethers` `^6.x`
+- `@web3auth/react-native-sdk` `^10.0.0`
+- `viem` `^2.x`
+- `@react-native-async-storage/async-storage` `^1.23.x` (peer for `@metamask/connect-multichain` via `@web3auth/react-native-sdk`)
 
 ## Prerequisites
 
@@ -85,13 +86,15 @@ connectTo({
 
 ### After login
 
-The wallet address returned by `getAddress(provider!)` is **identical** no matter which of the three buttons was used, as long as the user's email is the same across providers.
+The wallet address returned by `getAddress(connection!.ethereumProvider)` is **identical** no matter which of the three buttons was used, as long as the user's email is the same across providers.
 
 ## Troubleshooting
 
 **Different addresses for the same user** — Check that the `groupedAuthConnectionId` is identical across all `connectTo` calls, that the Grouped Connection on the Dashboard includes all sub-connections, and that the verifier ID field resolves to the same value across providers.
 
 **Metro errors** — See [Metro Polyfill Troubleshooting](https://docs.metamask.io/embedded-wallets/troubleshooting/metro-issues/).
+
+**`@react-native-async-storage/async-storage` not found** — Install it explicitly: `npm install @react-native-async-storage/async-storage@^1.23.1`. Required by `@metamask/connect-multichain` (pulled in via `@web3auth/react-native-sdk`). After installing, run `cd ios && pod install` for iOS.
 
 ## Resources
 

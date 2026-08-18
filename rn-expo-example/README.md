@@ -6,40 +6,42 @@ An Expo-managed workflow example that mirrors `rn-bare-quick-start` but uses `ex
 
 - Expo-specific provider setup (`expo-web-browser`, `expo-secure-store`, `expo-linking`)
 - `index.ts` entry point that imports `@web3auth/react-native-sdk/setup` first
-- Logging in with email OTP, reading wallet address/balance, signing a message
-- Wallet Services helpers (wallet UI, MFA, identity token)
+- Logging in with email OTP, reading wallet address/balance, signing a message via `connection.ethereumProvider`
+- Wallet Services helpers (wallet UI, MFA, access token, auth token info, session refresh)
 
 ## File tour
 
 | File | What it does |
 |---|---|
-| `web3authConfig.ts` | The **only file you edit** — Client ID, redirect URL (via `expo-linking`), network, chain config |
+| `web3authConfig.ts` | The **only file you edit** — Client ID, redirect URL (via `expo-linking`), network |
 | `lib/evm.ts` | Pure EVM helpers (`getAddress`, `getBalance`, `signMessage`) — no React |
 | `App.tsx` | `<Web3AuthProvider>` (Expo variant) + `HomeScreen` with inlined login/logged-in views |
 | `index.ts` | Entry point — `@web3auth/react-native-sdk/setup` first, then `registerRootComponent(App)` |
-| `metro.config.js` | Expo metro config wrapped with `withWeb3Auth()` |
+| `babel.config.js` | `hermes-v0` transform profile for Web3Auth transitive deps on Hermes |
+| `metro.config.js` | `withWeb3Auth()` on `expo/metro-config` plus Expo-specific resolver fixes |
 
 ## Tech stack
 
 - Expo SDK `~51`
-- `@web3auth/react-native-sdk` `^9.0.0`
+- `@web3auth/react-native-sdk` `^10.0.0`
 - `expo-web-browser` + `expo-secure-store`
-- `ethers` `^6.x`
+- `@react-native-async-storage/async-storage`
+- `react-native-quick-crypto` + `react-native-quick-base64`
+- `viem` `^2.x`
 
 ## Prerequisites
 
 - Node.js `>=18`
 - Expo CLI: `npm install -g expo-cli`
-- Expo Go or a development build (bare Expo)
+- Expo Go or a development build
 - A [Web3Auth Dashboard](https://dashboard.web3auth.io) project
 
 ## Dashboard setup
 
 1. Create a project at [dashboard.web3auth.io](https://dashboard.web3auth.io).
-2. Under **Allowed Origins**, add:
-   ```
-   web3authrnexpoexample://web3auth
-   ```
+2. Under **Allowed Origins**, add the redirect URL your build resolves to:
+   - Dev client / standalone: `web3authexpoexample://web3auth`
+   - Expo Go: output of `Linking.createURL("web3auth", {})` (see `web3authConfig.ts`)
 3. Copy the **Client ID** into `web3authConfig.ts`.
 
 ## Installation
@@ -59,8 +61,6 @@ npm run android    # Android emulator (requires Android Studio)
 
 ## Key difference from bare examples
 
-### Providers (Expo vs bare)
-
 | | Bare | Expo |
 |---|---|---|
 | Web browser | `@toruslabs/react-native-web-browser` | `expo-web-browser` |
@@ -74,18 +74,20 @@ npm run android    # Android emulator (requires Android Studio)
 import * as WebBrowser from "expo-web-browser";
 import * as SecureStore from "expo-secure-store";
 
-<Web3AuthProvider webBrowser={WebBrowser} storage={SecureStore} config={web3AuthConfig}>
+<Web3AuthProvider webBrowser={WebBrowser} storage={SecureStore} config={getWeb3AuthConfig(useAA)}>
 ```
 
 ## Polyfills
 
-`index.ts` imports `@web3auth/react-native-sdk/setup` as the very first line. `metro.config.js` uses `withWeb3Auth()` on top of `expo/metro-config`. Both are required for the SDK to initialise.
+`index.ts` imports `@web3auth/react-native-sdk/setup` as the very first line. `metro.config.js` uses `withWeb3Auth()` on top of `expo/metro-config`. `babel.config.js` sets `unstable_transformProfile: "hermes-v0"` for Hermes.
+
+`react-native-quick-base64` is a direct dependency so Expo autolinks the native module used by `react-native-quick-crypto`.
 
 ## Troubleshooting
 
-**`Cannot read property 'getRandomValues' of undefined`** — Check that `index.ts` is importing `@web3auth/react-native-sdk/setup` before any other imports, and that `package.json` `"main"` points to `index.ts`.
+**OAuth redirect not working** — Confirm `web3authexpoexample://web3auth` is allowlisted in the dashboard and matches `app.json` / `Info.plist`.
 
-**Metro polyfill errors** — See [Metro Polyfill Troubleshooting](https://docs.metamask.io/embedded-wallets/troubleshooting/metro-issues/).
+**Metro / Hermes errors after upgrading deps** — Clear the Metro cache (`npx expo start --clear`) and rebuild the native app. See [Metro Polyfill Troubleshooting](https://docs.metamask.io/embedded-wallets/troubleshooting/metro-issues/).
 
 ## Resources
 

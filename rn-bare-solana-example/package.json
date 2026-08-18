@@ -10,10 +10,12 @@
     "test": "jest"
   },
   "dependencies": {
-    "@ethersproject/shims": "^5.7.0",
-    "@solana/web3.js": "^1.95.2",
+    "@react-native-async-storage/async-storage": "^1.23.1",
+    "@solana/kit": "^6.10.0",
+    "@solana/react-hooks": "^1.4.1",
+    "@solana/webcrypto-ed25519-polyfill": "^6.10.0",
     "@toruslabs/react-native-web-browser": "^1.1.0",
-    "@web3auth/react-native-sdk": "^9.0.0",
+    "@web3auth/react-native-sdk": "^10.0.0",
     "react": "18.2.0",
     "react-native": "0.74.2",
     "react-native-encrypted-storage": "^4.0.3",
@@ -41,7 +43,7 @@
     "process": "^0.11.10",
     "react-test-renderer": "18.2.0",
     "readable-stream": "^4.5.2",
-    "typescript": "5.0.4"
+    "typescript": "^5.4.5"
   },
   "engines": {
     "node": ">=18"

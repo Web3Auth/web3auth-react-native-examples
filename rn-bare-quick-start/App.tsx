@@ -1,11 +1,11 @@
-import "@ethersproject/shims";
-
 import * as WebBrowser from "@toruslabs/react-native-web-browser";
 import {
   AUTH_CONNECTION,
+  useAccessToken,
+  useAuthTokenInfo,
   useEnableMFA,
-  useIdentityToken,
   useManageMFA,
+  useRefreshSession,
   useSignatureRequest,
   useWalletUI,
   useWeb3Auth,
@@ -40,17 +40,15 @@ interface HomeScreenProps {
 // ─── Inner screen (rendered inside Web3AuthProvider) ──────────────────────────
 // IMP START - SDK Initialization
 function HomeScreen({ useAccountAbstraction, onToggleAA }: HomeScreenProps) {
-  // Auth state
-  const { isConnected, isInitializing, provider } = useWeb3Auth();
-  // Connect / disconnect
+  const { isConnected, isAuthorized, accessToken, isInitializing, connection } = useWeb3Auth();
   const { connectTo, loading } = useWeb3AuthConnect();
   const { disconnect } = useWeb3AuthDisconnect();
-  // User profile
   const { userInfo } = useWeb3AuthUser();
-  // Wallet Services helpers
   const { showWalletUI } = useWalletUI();
   const { request } = useSignatureRequest();
-  const { getIdentityToken } = useIdentityToken();
+  const { getAccessToken } = useAccessToken();
+  const { getAuthTokenInfo } = useAuthTokenInfo();
+  const { refreshSession } = useRefreshSession();
   const { enableMFA } = useEnableMFA();
   const { manageMFA } = useManageMFA();
   // IMP END - SDK Initialization
@@ -58,6 +56,8 @@ function HomeScreen({ useAccountAbstraction, onToggleAA }: HomeScreenProps) {
   const [email, setEmail] = useState("");
   const [output, setOutput] = useState("");
   const log = (...args: unknown[]) => setOutput(JSON.stringify(args, null, 2));
+
+  const ethereumProvider = connection?.ethereumProvider;
 
   // ── Loading ──────────────────────────────────────────────────────────────────
   if (isInitializing) {
@@ -103,19 +103,42 @@ function HomeScreen({ useAccountAbstraction, onToggleAA }: HomeScreenProps) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.buttonArea}>
-        <Button title="Get User Info" onPress={() => log(userInfo)} />
+        <Button title="Get User Info" onPress={() => log({ userInfo, isAuthorized, accessToken })} />
 
         {/* IMP START - Blockchain Calls */}
-        <Button title="Get Address" onPress={() => getAddress(provider!).then(log)} />
-        <Button title="Get Balance" onPress={() => getBalance(provider!).then(log)} />
-        <Button title="Sign Message" onPress={() => signMessage(provider!, "Hello Web3Auth!").then(log)} />
+        <Button
+          title="Get Address"
+          onPress={() => {
+            if (!ethereumProvider) return log("provider not set");
+            getAddress(ethereumProvider).then(log);
+          }}
+        />
+        <Button
+          title="Get Balance"
+          onPress={() => {
+            if (!ethereumProvider) return log("provider not set");
+            getBalance(ethereumProvider).then(log);
+          }}
+        />
+        <Button
+          title="Sign Message"
+          onPress={() => {
+            if (!ethereumProvider) return log("provider not set");
+            signMessage(ethereumProvider, "Hello Web3Auth!").then(log);
+          }}
+        />
         {/* IMP END - Blockchain Calls */}
 
         {/* IMP START - Signature Request */}
         <Button title="Request Signature" onPress={() => request("personal_sign", ["Hello Web3Auth!", "0x"]).then(log)} />
         {/* IMP END - Signature Request */}
 
-        <Button title="Get Identity Token" onPress={() => getIdentityToken().then(log)} />
+        <Button title="Get Access Token" onPress={() => getAccessToken().then(log)} />
+        <Button title="Get Auth Token Info" onPress={() => getAuthTokenInfo().then(log)} />
+        <Button
+          title="Refresh Session"
+          onPress={() => refreshSession().then((ok) => log(ok ? "session refreshed" : "session refresh failed"))}
+        />
         <Button title="Show Wallet UI" onPress={() => showWalletUI()} />
         <Button title="Enable MFA" onPress={enableMFA} />
         <Button title="Manage MFA" onPress={manageMFA} />

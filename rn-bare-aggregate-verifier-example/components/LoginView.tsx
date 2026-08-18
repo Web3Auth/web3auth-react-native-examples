@@ -1,6 +1,6 @@
 import { AUTH_CONNECTION, useWeb3AuthConnect } from "@web3auth/react-native-sdk";
 import React from "react";
-import { Button, StyleSheet, Text, View } from "react-native";
+import { Alert, Button, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 /**
@@ -20,25 +20,35 @@ import { SafeAreaView } from "react-native-safe-area-context";
  * used here so Google email == Auth0 email == GitHub email → same key).
  */
 export function LoginView() {
-  const { connectTo, loading } = useWeb3AuthConnect();
+  const { connectTo, loading, error } = useWeb3AuthConnect();
+
+  const handleLogin = async (
+    label: string,
+    params: Parameters<typeof connectTo>[0],
+  ) => {
+    const connection = await connectTo(params);
+    if (!connection) {
+      Alert.alert("Login error", `${label} failed.${error ? ` ${String(error)}` : ""}`);
+    }
+  };
 
   // IMP START - Login
   const loginWithGoogle = () =>
-    connectTo({
+    handleLogin("Google login", {
       authConnection: AUTH_CONNECTION.GOOGLE,
       authConnectionId: "w3a-google",
       groupedAuthConnectionId: "aggregate-sapphire",
     });
 
   const loginWithEmailPasswordless = () =>
-    connectTo({
+    handleLogin("Email OTP login", {
       authConnection: AUTH_CONNECTION.CUSTOM,
       authConnectionId: "w3a-a0-email-passwordless",
       groupedAuthConnectionId: "aggregate-sapphire",
     });
 
   const loginWithGitHub = () =>
-    connectTo({
+    handleLogin("GitHub login", {
       authConnection: AUTH_CONNECTION.CUSTOM,
       authConnectionId: "w3a-a0-github",
       groupedAuthConnectionId: "aggregate-sapphire",
@@ -49,9 +59,10 @@ export function LoginView() {
     <SafeAreaView style={styles.loginArea}>
       <Text style={styles.heading}>Login with any method</Text>
       <Text style={styles.subheading}>Same account → same wallet address</Text>
-      <Button title={loading ? "Logging in…" : "Login with Google"} onPress={loginWithGoogle} />
-      <Button title={loading ? "Logging in…" : "Login with Email OTP"} onPress={loginWithEmailPasswordless} />
-      <Button title={loading ? "Logging in…" : "Login with GitHub"} onPress={loginWithGitHub} />
+      <Button title={loading ? "Logging in…" : "Login with Google"} onPress={loginWithGoogle} disabled={loading} />
+      <Button title={loading ? "Logging in…" : "Login with Email OTP"} onPress={loginWithEmailPasswordless} disabled={loading} />
+      <Button title={loading ? "Logging in…" : "Login with GitHub"} onPress={loginWithGitHub} disabled={loading} />
+      {error ? <Text style={styles.errorText}>{String(error)}</Text> : null}
     </SafeAreaView>
   );
 }
@@ -73,6 +84,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#666",
     marginBottom: 12,
+    textAlign: "center",
+  },
+  errorText: {
+    color: "#c00",
+    fontSize: 14,
     textAlign: "center",
   },
 });

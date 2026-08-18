@@ -1,5 +1,3 @@
-import "@ethersproject/shims";
-
 import * as WebBrowser from "@toruslabs/react-native-web-browser";
 import { useWeb3Auth, Web3AuthProvider } from "@web3auth/react-native-sdk";
 import React from "react";
@@ -15,8 +13,16 @@ import web3AuthConfig from "./web3authConfig";
 // ─── Inner screen (must be a child of Web3AuthProvider) ───────────────────────
 // IMP START - SDK Initialization
 function Screen() {
-  const { isConnected, isInitializing } = useWeb3Auth();
+  const { isConnected, isInitializing, initError } = useWeb3Auth();
   // IMP END - SDK Initialization
+
+  if (initError) {
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.errorText}>Initialization failed: {String(initError)}</Text>
+      </View>
+    );
+  }
 
   if (isInitializing) {
     return (
@@ -52,5 +58,10 @@ const styles = StyleSheet.create({
   initText: {
     marginTop: 12,
     color: "#666",
+  },
+  errorText: {
+    color: "#c00",
+    paddingHorizontal: 24,
+    textAlign: "center",
   },
 });

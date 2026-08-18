@@ -28,10 +28,11 @@ The SDK handles the entire OAuth flow via an in-app browser — no `react-native
 ## Tech stack
 
 - React Native `0.74.x` (bare workflow)
-- `@web3auth/react-native-sdk` `^9.0.0`
-- `ethers` `^6.x`
+- `@web3auth/react-native-sdk` `^10.0.0`
+- `viem` `^2.x`
 - `@toruslabs/react-native-web-browser`
 - `react-native-encrypted-storage`
+- `@react-native-async-storage/async-storage` `^1.23.x` (peer for `@metamask/connect-multichain` via `@web3auth/react-native-sdk`)
 
 ## Prerequisites
 
@@ -89,9 +90,11 @@ connectTo({
 ### Blockchain calls (`lib/evm.ts`)
 
 ```typescript
-const { provider } = useWeb3Auth(); // EIP-1193 provider, use directly with ethers
-const address = await getAddress(provider!);
-const balance = await getBalance(provider!);
+const { connection } = useWeb3Auth();
+const provider = connection?.ethereumProvider;
+if (!provider) return;
+const address = await getAddress(provider);
+const balance = await getBalance(provider);
 ```
 
 ### Signing via Wallet Services overlay (`components/HomeView.tsx`)
@@ -106,6 +109,8 @@ const sig = await request("personal_sign", ["Hello Web3Auth!", "0x"]);
 **OAuth redirect not working** — Confirm `web3authrnbareauth0example://auth` is in the Dashboard's Allowed Origins, and the scheme appears in `AndroidManifest.xml` and `Info.plist`.
 
 **Metro errors** — See [Metro Polyfill Troubleshooting](https://docs.metamask.io/embedded-wallets/troubleshooting/metro-issues/).
+
+**`@react-native-async-storage/async-storage` not found** — Install it explicitly: `npm install @react-native-async-storage/async-storage@^1.23.1`. Required by `@metamask/connect-multichain` (pulled in via `@web3auth/react-native-sdk`). After installing, run `cd ios && pod install` for iOS.
 
 ## Resources
 

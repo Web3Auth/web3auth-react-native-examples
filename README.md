@@ -2,7 +2,7 @@
 
 This repository contains React Native example apps for integrating [MetaMask Embedded Wallets](https://docs.metamask.io/embedded-wallets/) (formerly Web3Auth). Each example demonstrates a specific use case and is fully runnable on iOS and Android.
 
-All examples use the **v9 hooks API** (`Web3AuthProvider`, `useWeb3AuthConnect`, `useWeb3AuthDisconnect`, etc.) from `@web3auth/react-native-sdk`, which mirrors the pattern of the Web SDK.
+All examples use the **v10 hooks API** (`Web3AuthProvider`, `useWeb3AuthConnect`, `useWeb3AuthDisconnect`, etc.) from `@web3auth/react-native-sdk` `^10.0.0`, which mirrors the pattern of the Web SDK.
 
 ## What is MetaMask Embedded Wallets?
 
@@ -11,7 +11,7 @@ MetaMask Embedded Wallets (formerly Web3Auth Plug and Play) provides non-custodi
 - **No seed phrases** for users
 - **Social logins** (Google, Facebook, Discord, Apple, and more)
 - **Custom authentication** via Auth0, Firebase, or any JWT provider
-- **Built-in EVM and Solana providers** derived automatically from the `chains` config
+- **Built-in EVM and Solana wallets** exposed via `connection.ethereumProvider` and `connection.solanaWallet`
 - **Cross-platform** — runs on iOS and Android
 
 ## Examples
@@ -23,7 +23,7 @@ MetaMask Embedded Wallets (formerly Web3Auth Plug and Play) provides non-custodi
 | [Quick Start](./rn-bare-quick-start) | Minimal integration with Ethereum and email OTP | Email OTP |
 | [Auth0 Example](./rn-bare-auth0-example) | SDK-native Auth0 login — no `react-native-auth0` required | Custom (Auth0, SDK-native) |
 | [Firebase Example](./rn-bare-firebase-example) | Bring-your-own-JWT with Firebase Authentication | Custom (Firebase JWT) |
-| [Solana Example](./rn-bare-solana-example) | Solana chain integration with the built-in Solana provider | Email OTP |
+| [Solana Example](./rn-bare-solana-example) | Solana chain integration with `SolanaProvider` and `/solana` hooks | Email OTP |
 | [Grouped Connections](./rn-bare-aggregate-verifier-example) | Link multiple auth methods so the same user always gets the same wallet | Social + Custom (grouped) |
 
 ### React Native (Expo)
@@ -42,7 +42,7 @@ Examples follow one of two structures — pick the one that matches your goal:
 
 **Split into `components/` (feature tier):** `rn-bare-auth0-example`, `rn-bare-firebase-example`, `rn-bare-solana-example`, and `rn-bare-aggregate-verifier-example` separate the login screen (`LoginView.tsx`), logged-in screen (`HomeView.tsx`), and console output (`Console.tsx`). The login file is the _point_ of each example — it contains only what is unique to that auth method. Start with `App.tsx` (provider + routing), then open `components/LoginView.tsx` to see the auth-specific code.
 
-Both tiers use the same `web3authConfig.ts` for chain and SDK configuration, and the same `lib/evm.ts` (or `lib/solana.ts`) for blockchain calls.
+Both tiers use the same `web3authConfig.ts` for chain and SDK configuration, and the same `lib/evm.ts` (viem helpers) or `lib/solana.ts` for blockchain calls.
 
 ## Getting Started
 
@@ -63,7 +63,9 @@ Both tiers use the same `web3authConfig.ts` for chain and SDK configuration, and
 
 **`AUTH_CONNECTION`** — Replaces the old `LOGIN_PROVIDER` enum. Use `AUTH_CONNECTION.EMAIL_PASSWORDLESS`, `AUTH_CONNECTION.GOOGLE`, `AUTH_CONNECTION.CUSTOM`, etc. when calling `connectTo(...)`.
 
-**Chain configuration** — Instead of constructing `EthereumPrivateKeyProvider` or `SolanaPrivateKeyProvider`, pass a `chains` array and `defaultChainId` in `web3AuthOptions`. The SDK creates the appropriate provider automatically based on the `chainNamespace`.
+**Connection object** — After login, `useWeb3Auth()` exposes `connection` instead of `provider`. For EVM, use `connection?.ethereumProvider` with viem. For Solana, wrap the app in `SolanaProvider` and use hooks from `@web3auth/react-native-sdk/solana`.
+
+**Chain configuration** — Instead of constructing `EthereumPrivateKeyProvider` or `SolanaPrivateKeyProvider`, pass a `chains` array and `defaultChainId` in `web3AuthOptions`. The SDK creates the appropriate wallet automatically based on the `chainNamespace`.
 
 **`authConnectionId`** — Replaces `loginConfig.jwt.verifier`. Set it to the Connection ID in your Dashboard. For grouped connections, also pass `groupedAuthConnectionId`.
 
@@ -76,6 +78,7 @@ Both tiers use the same `web3authConfig.ts` for chain and SDK configuration, and
 - [MetaMask Embedded Wallets Docs](https://docs.metamask.io/embedded-wallets/)
 - [React Native SDK Reference](https://docs.metamask.io/embedded-wallets/sdk/react-native/)
 - [v8 to v9 Migration Guide](https://docs.metamask.io/embedded-wallets/sdk/react-native/migration-guides/rn-v8-to-v9/)
+- [v9 to v10 Migration Guide](https://github.com/Web3Auth/web3auth-react-native-sdk/blob/master/README.md)
 - [Hooks Reference](https://docs.metamask.io/embedded-wallets/sdk/react-native/hooks/)
 - [Dashboard](https://dashboard.web3auth.io)
 - [Metro Polyfill Troubleshooting](https://docs.metamask.io/embedded-wallets/troubleshooting/metro-issues/)

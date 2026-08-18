@@ -1,7 +1,9 @@
 import {
+  useAccessToken,
+  useAuthTokenInfo,
   useEnableMFA,
-  useIdentityToken,
   useManageMFA,
+  useRefreshSession,
   useSignatureRequest,
   useWalletUI,
   useWeb3Auth,
@@ -22,27 +24,49 @@ import { getAddress, getBalance, signMessage } from "../lib/evm";
  * shown here will be the same for the same user, regardless of login method.
  */
 export function HomeView() {
-  const { provider } = useWeb3Auth();
+  const { connection, isAuthorized, accessToken } = useWeb3Auth();
   const { disconnect } = useWeb3AuthDisconnect();
   const { userInfo } = useWeb3AuthUser();
   const { showWalletUI } = useWalletUI();
   const { request } = useSignatureRequest();
-  const { getIdentityToken } = useIdentityToken();
+  const { getAccessToken } = useAccessToken();
+  const { getAuthTokenInfo } = useAuthTokenInfo();
+  const { refreshSession } = useRefreshSession();
   const { enableMFA } = useEnableMFA();
   const { manageMFA } = useManageMFA();
 
   const [output, setOutput] = useState("");
   const log = (...args: unknown[]) => setOutput(JSON.stringify(args, null, 2));
 
+  const ethereumProvider = connection?.ethereumProvider;
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.buttonArea}>
-        <Button title="Get User Info" onPress={() => log(userInfo)} />
+        <Button title="Get User Info" onPress={() => log({ userInfo, isAuthorized, accessToken })} />
 
         {/* IMP START - Blockchain Calls */}
-        <Button title="Get Address" onPress={() => getAddress(provider!).then(log)} />
-        <Button title="Get Balance" onPress={() => getBalance(provider!).then(log)} />
-        <Button title="Sign Message" onPress={() => signMessage(provider!, "Hello Web3Auth!").then(log)} />
+        <Button
+          title="Get Address"
+          onPress={() => {
+            if (!ethereumProvider) return log("provider not set");
+            getAddress(ethereumProvider).then(log);
+          }}
+        />
+        <Button
+          title="Get Balance"
+          onPress={() => {
+            if (!ethereumProvider) return log("provider not set");
+            getBalance(ethereumProvider).then(log);
+          }}
+        />
+        <Button
+          title="Sign Message"
+          onPress={() => {
+            if (!ethereumProvider) return log("provider not set");
+            signMessage(ethereumProvider, "Hello Web3Auth!").then(log);
+          }}
+        />
         {/* IMP END - Blockchain Calls */}
 
         <Button
@@ -50,7 +74,12 @@ export function HomeView() {
           onPress={() => request("personal_sign", ["Hello Web3Auth!", "0x"]).then(log)}
         />
 
-        <Button title="Get Identity Token" onPress={() => getIdentityToken().then(log)} />
+        <Button title="Get Access Token" onPress={() => getAccessToken().then(log)} />
+        <Button title="Get Auth Token Info" onPress={() => getAuthTokenInfo().then(log)} />
+        <Button
+          title="Refresh Session"
+          onPress={() => refreshSession().then((ok) => log(ok ? "session refreshed" : "session refresh failed"))}
+        />
         <Button title="Show Wallet UI" onPress={() => showWalletUI()} />
         <Button title="Enable MFA" onPress={enableMFA} />
         <Button title="Manage MFA" onPress={manageMFA} />

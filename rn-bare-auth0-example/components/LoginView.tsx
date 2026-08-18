@@ -1,6 +1,6 @@
 import { AUTH_CONNECTION, useWeb3AuthConnect } from "@web3auth/react-native-sdk";
 import React from "react";
-import { Alert, Button, StyleSheet, View } from "react-native";
+import { Alert, Button, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 /**
@@ -13,11 +13,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
  * Dashboard connection: authConnectionId = "w3a-auth0-demo"
  */
 export function LoginView() {
-  const { connectTo, loading } = useWeb3AuthConnect();
+  const { connectTo, loading, error } = useWeb3AuthConnect();
 
   // IMP START - Login
-  const loginWithAuth0 = () =>
-    connectTo({
+  const loginWithAuth0 = async () => {
+    const connection = await connectTo({
       authConnection: AUTH_CONNECTION.CUSTOM,
       // authConnectionId is the Connection ID from the Web3Auth Dashboard
       authConnectionId: "w3a-auth0-demo",
@@ -27,12 +27,18 @@ export function LoginView() {
         // JWT field used as the unique user identifier
         verifierIdField: "sub",
       },
-    }).catch((e: unknown) => Alert.alert("Login error", String(e)));
+    });
+
+    if (!connection) {
+      Alert.alert("Login error", error ? String(error) : "Web3Auth did not return a connection.");
+    }
+  };
   // IMP END - Login
 
   return (
     <SafeAreaView style={styles.loginArea}>
-      <Button title={loading ? "Logging in…" : "Login with Auth0"} onPress={loginWithAuth0} />
+      <Button title={loading ? "Logging in…" : "Login with Auth0"} onPress={loginWithAuth0} disabled={loading} />
+      {error ? <Text style={styles.errorText}>{String(error)}</Text> : null}
     </SafeAreaView>
   );
 }
@@ -43,5 +49,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 16,
+    paddingHorizontal: 24,
+  },
+  errorText: {
+    color: "#c00",
+    fontSize: 14,
+    textAlign: "center",
   },
 });
