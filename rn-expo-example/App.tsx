@@ -3,10 +3,8 @@ import * as SecureStore from "expo-secure-store";
 import {
   AUTH_CONNECTION,
   useAccessToken,
-  useAuthTokenInfo,
   useEnableMFA,
   useManageMFA,
-  useRefreshSession,
   useSignatureRequest,
   useWalletUI,
   useWeb3Auth,
@@ -18,6 +16,7 @@ import {
 import React, { useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Button,
   ScrollView,
   StyleSheet,
@@ -39,15 +38,13 @@ interface HomeScreenProps {
 // ─── Inner screen (rendered inside Web3AuthProvider) ──────────────────────────
 // IMP START - SDK Initialization
 function HomeScreen({ useAccountAbstraction, onToggleAA }: HomeScreenProps) {
-  const { isConnected, isAuthorized, accessToken, isInitializing, connection } = useWeb3Auth();
-  const { connectTo, loading } = useWeb3AuthConnect();
+  const { isConnected, isInitializing, connection } = useWeb3Auth();
+  const { connectTo, loading, error } = useWeb3AuthConnect();
   const { disconnect } = useWeb3AuthDisconnect();
   const { userInfo } = useWeb3AuthUser();
   const { showWalletUI } = useWalletUI();
   const { request } = useSignatureRequest();
   const { getAccessToken } = useAccessToken();
-  const { getAuthTokenInfo } = useAuthTokenInfo();
-  const { refreshSession } = useRefreshSession();
   const { enableMFA } = useEnableMFA();
   const { manageMFA } = useManageMFA();
   // IMP END - SDK Initialization
@@ -56,7 +53,7 @@ function HomeScreen({ useAccountAbstraction, onToggleAA }: HomeScreenProps) {
   const [output, setOutput] = useState("");
   const log = (...args: unknown[]) => setOutput(JSON.stringify(args, null, 2));
 
-  const ethereumProvider = connection?.ethereumProvider;
+  const ethereumProvider = connection!.ethereumProvider!;
 
   // ── Loading ──────────────────────────────────────────────────────────────────
   if (isInitializing) {
@@ -86,13 +83,18 @@ function HomeScreen({ useAccountAbstraction, onToggleAA }: HomeScreenProps) {
         />
         <Button
           title={loading ? "Logging in…" : "Login with Email OTP"}
-          onPress={() =>
-            connectTo({
+          onPress={async () => {
+            const loginConnection = await connectTo({
               authConnection: AUTH_CONNECTION.EMAIL_PASSWORDLESS,
               extraLoginOptions: { login_hint: email },
-            })
-          }
+            });
+            if (!loginConnection) {
+              Alert.alert("Login error", error ? String(error) : "Web3Auth did not return a connection.");
+            }
+          }}
+          disabled={loading}
         />
+        {error ? <Text style={styles.errorText}>{String(error)}</Text> : null}
       </SafeAreaView>
     );
     // IMP END - Login
@@ -102,30 +104,12 @@ function HomeScreen({ useAccountAbstraction, onToggleAA }: HomeScreenProps) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.buttonArea}>
-        <Button title="Get User Info" onPress={() => log({ userInfo, isAuthorized, accessToken })} />
+        <Button title="Get User Info" onPress={() => log(userInfo)} />
 
         {/* IMP START - Blockchain Calls */}
-        <Button
-          title="Get Address"
-          onPress={() => {
-            if (!ethereumProvider) return log("provider not set");
-            getAddress(ethereumProvider).then(log);
-          }}
-        />
-        <Button
-          title="Get Balance"
-          onPress={() => {
-            if (!ethereumProvider) return log("provider not set");
-            getBalance(ethereumProvider).then(log);
-          }}
-        />
-        <Button
-          title="Sign Message"
-          onPress={() => {
-            if (!ethereumProvider) return log("provider not set");
-            signMessage(ethereumProvider, "Hello Web3Auth!").then(log);
-          }}
-        />
+        <Button title="Get Address" onPress={() => getAddress(ethereumProvider).then(log)} />
+        <Button title="Get Balance" onPress={() => getBalance(ethereumProvider).then(log)} />
+        <Button title="Sign Message" onPress={() => signMessage(ethereumProvider, "Hello Web3Auth!").then(log)} />
         {/* IMP END - Blockchain Calls */}
 
         {/* IMP START - Signature Request */}
@@ -133,11 +117,6 @@ function HomeScreen({ useAccountAbstraction, onToggleAA }: HomeScreenProps) {
         {/* IMP END - Signature Request */}
 
         <Button title="Get Access Token" onPress={() => getAccessToken().then(log)} />
-        <Button title="Get Auth Token Info" onPress={() => getAuthTokenInfo().then(log)} />
-        <Button
-          title="Refresh Session"
-          onPress={() => refreshSession().then((ok) => log(ok ? "session refreshed" : "session refresh failed"))}
-        />
         <Button title="Show Wallet UI" onPress={() => showWalletUI()} />
         <Button title="Enable MFA" onPress={enableMFA} />
         <Button title="Manage MFA" onPress={manageMFA} />
@@ -190,6 +169,11 @@ const styles = StyleSheet.create({
   initText: {
     marginTop: 12,
     color: "#666",
+  },
+  errorText: {
+    color: "#c00",
+    fontSize: 14,
+    textAlign: "center",
   },
   loginArea: {
     flex: 1,

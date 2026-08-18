@@ -22,37 +22,39 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export function LoginView() {
   const { connectTo, loading, error } = useWeb3AuthConnect();
 
-  const handleLogin = async (
-    label: string,
-    params: Parameters<typeof connectTo>[0],
-  ) => {
-    const connection = await connectTo(params);
-    if (!connection) {
-      Alert.alert("Login error", `${label} failed.${error ? ` ${String(error)}` : ""}`);
-    }
-  };
-
   // IMP START - Login
-  const loginWithGoogle = () =>
-    handleLogin("Google login", {
+  const loginWithGoogle = async () => {
+    const connection = await connectTo({
       authConnection: AUTH_CONNECTION.GOOGLE,
       authConnectionId: "w3a-google",
       groupedAuthConnectionId: "aggregate-sapphire",
     });
+    if (!connection) {
+      Alert.alert("Login error", error ? String(error) : "Web3Auth did not return a connection.");
+    }
+  };
 
-  const loginWithEmailPasswordless = () =>
-    handleLogin("Email OTP login", {
+  const loginWithEmailPasswordless = async () => {
+    const connection = await connectTo({
       authConnection: AUTH_CONNECTION.CUSTOM,
       authConnectionId: "w3a-a0-email-passwordless",
       groupedAuthConnectionId: "aggregate-sapphire",
     });
+    if (!connection) {
+      Alert.alert("Login error", error ? String(error) : "Web3Auth did not return a connection.");
+    }
+  };
 
-  const loginWithGitHub = () =>
-    handleLogin("GitHub login", {
+  const loginWithGitHub = async () => {
+    const connection = await connectTo({
       authConnection: AUTH_CONNECTION.CUSTOM,
       authConnectionId: "w3a-a0-github",
       groupedAuthConnectionId: "aggregate-sapphire",
     });
+    if (!connection) {
+      Alert.alert("Login error", error ? String(error) : "Web3Auth did not return a connection.");
+    }
+  };
   // IMP END - Login
 
   return (

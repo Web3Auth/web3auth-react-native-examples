@@ -1,9 +1,7 @@
 import {
   useAccessToken,
-  useAuthTokenInfo,
   useEnableMFA,
   useManageMFA,
-  useRefreshSession,
   useWalletUI,
   useWeb3Auth,
   useWeb3AuthDisconnect,
@@ -28,13 +26,10 @@ import { getSolanaBalance } from "../lib/solana";
  * Wallet Services (Wallet UI, MFA, auth tokens) are chain-agnostic.
  */
 export function HomeView() {
-  const { isAuthorized, accessToken } = useWeb3Auth();
   const { disconnect } = useWeb3AuthDisconnect();
   const { userInfo } = useWeb3AuthUser();
   const { showWalletUI } = useWalletUI();
   const { getAccessToken } = useAccessToken();
-  const { getAuthTokenInfo } = useAuthTokenInfo();
-  const { refreshSession } = useRefreshSession();
   const { enableMFA } = useEnableMFA();
   const { manageMFA } = useManageMFA();
   const { accounts, rpc } = useSolanaWallet();
@@ -43,43 +38,26 @@ export function HomeView() {
   const [output, setOutput] = useState("");
   const log = (...args: unknown[]) => setOutput(JSON.stringify(args, null, 2));
 
-  const solanaAddress = accounts?.[0] ?? null;
+  const solanaAddress = accounts![0]!;
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.buttonArea}>
-        <Button title="Get User Info" onPress={() => log({ userInfo, isAuthorized, accessToken })} />
+        <Button title="Get User Info" onPress={() => log(userInfo)} />
 
         {/* IMP START - Blockchain Calls */}
-        <Button
-          title="Get Solana Address"
-          onPress={() => {
-            if (!solanaAddress) return log("Not connected");
-            log(solanaAddress);
-          }}
-        />
+        <Button title="Get Solana Address" onPress={() => log(solanaAddress)} />
         <Button
           title="Get Balance"
-          onPress={async () => {
-            if (!solanaAddress || !rpc) return log("Not connected");
-            log(await getSolanaBalance(rpc, solanaAddress));
-          }}
+          onPress={() => getSolanaBalance(rpc!, solanaAddress).then(log)}
         />
         <Button
           title="Sign Message"
-          onPress={async () => {
-            if (!solanaAddress) return log("Not connected");
-            log(await signMessage("Hello Web3Auth!"));
-          }}
+          onPress={() => signMessage("Hello Web3Auth!").then(log)}
         />
         {/* IMP END - Blockchain Calls */}
 
         <Button title="Get Access Token" onPress={() => getAccessToken().then(log)} />
-        <Button title="Get Auth Token Info" onPress={() => getAuthTokenInfo().then(log)} />
-        <Button
-          title="Refresh Session"
-          onPress={() => refreshSession().then((ok) => log(ok ? "session refreshed" : "session refresh failed"))}
-        />
         <Button title="Show Wallet UI" onPress={() => showWalletUI()} />
         <Button title="Enable MFA" onPress={enableMFA} />
         <Button title="Manage MFA" onPress={manageMFA} />

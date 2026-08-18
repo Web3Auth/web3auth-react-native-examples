@@ -1,6 +1,6 @@
 import { AUTH_CONNECTION, useWeb3AuthConnect } from "@web3auth/react-native-sdk";
 import React, { useState } from "react";
-import { Alert, Button, StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, Button, StyleSheet, Text, TextInput } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 /**
@@ -11,7 +11,7 @@ export function LoginView() {
   const { connectTo, loading, error } = useWeb3AuthConnect();
   const [email, setEmail] = useState("");
 
-  const login = () => {
+  const login = async () => {
     const trimmedEmail = email.trim();
     if (!trimmedEmail) {
       Alert.alert("Email required", "Enter your email before logging in.");
@@ -19,10 +19,13 @@ export function LoginView() {
     }
 
     // IMP START - Login
-    connectTo({
+    const connection = await connectTo({
       authConnection: AUTH_CONNECTION.EMAIL_PASSWORDLESS,
       extraLoginOptions: { login_hint: trimmedEmail },
-    }).catch((e: unknown) => Alert.alert("Login error", String(e)));
+    });
+    if (!connection) {
+      Alert.alert("Login error", error ? String(error) : "Web3Auth did not return a connection.");
+    }
     // IMP END - Login
   };
 
