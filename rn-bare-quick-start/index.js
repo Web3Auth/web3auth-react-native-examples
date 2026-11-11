@@ -1,5 +1,5 @@
 // IMP START - Web3Auth Setup
-// Must be the very first import — seeds crypto, Buffer, and URL polyfills
+// Must be the very first import — seeds crypto and Buffer polyfills
 import "@web3auth/react-native-sdk/setup";
 // IMP END - Web3Auth Setup
 

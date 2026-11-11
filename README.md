@@ -32,6 +32,8 @@ MetaMask Embedded Wallets (formerly Web3Auth Plug and Play) provides non-custodi
 |---|---|---|
 | [Expo Example](./rn-expo-example) | Expo managed workflow with `expo-web-browser` and `expo-secure-store` | Email OTP |
 
+> **Note:** Bare examples require React Native 0.84+. The Expo example currently uses SDK 51 (RN 0.74) until [Expo SDK 56](https://reactnative.dev/blog/2026/02/11/react-native-0.84#upgrade-to-084) ships with RN 0.85+.
+
 > The deprecated SFA (Single Factor Auth / Core Kit) SDK has been removed. The bring-your-own-JWT pattern previously shown in SFA examples is now demonstrated by `rn-bare-firebase-example`.
 
 ## How these examples are organized
@@ -71,7 +73,11 @@ Both tiers use the same `web3authConfig.ts` for chain and SDK configuration, and
 
 **Sapphire networks** — Use `WEB3AUTH_NETWORK.SAPPHIRE_DEVNET` during development and switch to `WEB3AUTH_NETWORK.SAPPHIRE_MAINNET` for production. The two networks derive different wallet addresses — never mix them.
 
-**Polyfills** — Every example's `index.js` / `index.ts` imports `@web3auth/react-native-sdk/setup` as the very first statement (seeds `crypto`, `Buffer`, and `URL` polyfills). `metro.config.js` wraps the config with `withWeb3Auth(getDefaultConfig(__dirname))` — no manual `extraNodeModules` block needed.
+**Polyfills** — Every example's `index.js` / `index.ts` imports `@web3auth/react-native-sdk/setup` as the very first statement (seeds `crypto` and `Buffer` polyfills). `metro.config.js` wraps the config with `withWeb3Auth(getDefaultConfig(__dirname))` — no manual `extraNodeModules` block needed.
+
+**React Native version** — Bare workflow examples require **React Native 0.84+** for the native [URL API](https://reactnative.dev/blog/2026/02/11/react-native-0.84#url-api-improvements) (`URL`, `URLSearchParams`, etc.). Do not add `react-native-url-polyfill` on 0.84+. See the [React Native support policy](https://github.com/reactwg/react-native-releases/blob/main/docs/support.md).
+
+**What 0.84 does not replace** — You still need `@web3auth/react-native-sdk/setup` (crypto / `Buffer`), `withWeb3Auth()` in Metro (Node built-in aliases), and `react-native-quick-crypto`. The Solana example also keeps `polyfills.js` (Ed25519 `crypto.subtle`, `AbortSignal.timeout`, `window` event APIs) and `@web3auth/auth` Metro shims — none of those are fixed by the RN upgrade.
 
 ## Documentation & Resources
 

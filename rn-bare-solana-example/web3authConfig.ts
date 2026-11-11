@@ -1,4 +1,4 @@
-import { CHAIN_NAMESPACES, WEB3AUTH_NETWORK, type Web3AuthContextConfig } from "@web3auth/react-native-sdk";
+import { WEB3AUTH_NETWORK, type Web3AuthContextConfig } from "@web3auth/react-native-sdk";
 
 // IMP START - Dashboard Registration
 // Get your Client ID from https://dashboard.web3auth.io
@@ -14,7 +14,7 @@ const web3AuthConfig: Web3AuthContextConfig = {
     // IMP END - Allowlist bundle ID
     network: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
     // IMP START - Chain Config
-    defaultChainId: "0x66",
+    defaultChainId: "0x67",
     // IMP END - Chain Config
   },
 };
