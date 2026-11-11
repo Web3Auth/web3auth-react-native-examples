@@ -1,15 +1,19 @@
 /**
  * React Native polyfills required by @solana/react-hooks and @wallet-standard/app.
  * Import immediately after `@web3auth/react-native-sdk/setup` in index.js.
+ *
+ * RN 0.84+ provides native URL / URLSearchParams — do not add react-native-url-polyfill.
+ * The shims below are still required on 0.84+ (not fixed by the RN upgrade).
  */
 
-// @solana/keys uses crypto.subtle for Ed25519. react-native-quick-crypto (installed
-// in @web3auth/react-native-sdk/setup) does not implement Ed25519 — patch it here.
+// @solana/keys uses crypto.subtle for Ed25519. react-native-quick-crypto does not
+// implement Ed25519 — patch it here.
 import { install as installEd25519Polyfill } from "@solana/webcrypto-ed25519-polyfill";
 
 installEd25519Polyfill();
 
-// @solana/react-hooks uses AbortSignal.timeout for RPC calls; Hermes on RN 0.74 lacks it.
+// @solana/react-hooks uses AbortSignal.timeout for RPC calls. RN 0.84 still ships
+// abort-controller@3 without .timeout — keep this until RN adds it natively.
 if (typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout !== "function") {
   AbortSignal.timeout = (ms) => {
     const controller = new AbortController();
@@ -19,7 +23,7 @@ if (typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout !== "functi
   };
 }
 
-// @wallet-standard/app dispatches wallet events on window. RN defines window without DOM APIs.
+// @wallet-standard/app dispatches wallet events on window. RN has no DOM window APIs.
 const win = typeof globalThis.window !== "undefined" ? globalThis.window : globalThis;
 if (typeof globalThis.window === "undefined") {
   globalThis.window = win;

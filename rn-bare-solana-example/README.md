@@ -21,12 +21,12 @@ Shows how to use MetaMask Embedded Wallets with **Solana**. The SDK derives an e
 | `components/HomeView.tsx` | Uses `useSolanaWallet` / `useSignMessage`, Wallet Services hooks, and `lib/solana.ts` |
 | `components/Console.tsx` | Dumb scrollable output box — `<Console output={...} />` |
 | `App.tsx` | `<Web3AuthProvider>` + `<SolanaProvider>` + `Screen` that switches between Login/Home |
-| `index.js` | Entry point — `@web3auth/react-native-sdk/setup` and `polyfills.js` must load before other imports |
+| `index.js` | Entry point — `@web3auth/react-native-sdk/setup` and `polyfills.js` must load before other imports (no URL polyfill needed on RN 0.84+) |
 | `metro.config.js` | `withWeb3Auth()` sets up all polyfill aliases |
 
 ## Tech stack
 
-- React Native `0.74.x` (bare workflow)
+- React Native `0.84.x` (bare workflow; **minimum 0.84** for native URL API — see [RN 0.84 URL improvements](https://reactnative.dev/blog/2026/02/11/react-native-0.84#url-api-improvements))
 - `@web3auth/react-native-sdk` `^10.0.0`
 - `@solana/react-hooks` `^1.4.x` (peer for `/solana` subpath)
 - `@solana/kit` `^6.x`
@@ -34,7 +34,7 @@ Shows how to use MetaMask Embedded Wallets with **Solana**. The SDK derives an e
 
 ## Prerequisites
 
-- Node.js `>=18`, React Native CLI environment, Xcode / Android Studio
+- Node.js `>=22.11` (required by React Native 0.84+), React Native CLI environment, Xcode / Android Studio
 - A [Web3Auth Dashboard](https://dashboard.web3auth.io) project
 
 ## Dashboard setup
@@ -45,8 +45,8 @@ Shows how to use MetaMask Embedded Wallets with **Solana**. The SDK derives an e
    solanarnexample://auth
    ```
 3. Copy the **Client ID** into `web3authConfig.ts`.
-4. Under **Chains**, add a Solana chain (e.g. Solana Testnet). The SDK fetches chain config from the dashboard at init — no local `chains` array is needed.
-5. If you set `defaultChainId` in `web3authConfig.ts`, it must match a `chainId` from your dashboard Solana chain (e.g. `0x2` for Testnet).
+4. Under **Chains**, add a Solana chain (e.g. Solana Devnet). The SDK fetches chain config from the dashboard at init — no local `chains` array is needed.
+5. If you set `defaultChainId` in `web3authConfig.ts`, it must match a `chainId` from your dashboard Solana chain (e.g. `0x67` for Devnet, `0x66` for Testnet, `0x65` for Mainnet).
 
 ### iOS deep link
 
@@ -110,7 +110,7 @@ const signature = await signMessage("Hello Web3Auth!");
 
 **`@react-native-async-storage/async-storage` not found** — Install it explicitly: `npm install @react-native-async-storage/async-storage@^1.23.1`. Required by `@metamask/connect-multichain` (pulled in via `@solana/react-hooks`). After installing, run `cd ios && pod install` for iOS.
 
-**`AbortSignal.timeout` / `window.addEventListener` errors** — These come from `@solana/react-hooks` and `@wallet-standard/app` expecting browser APIs. This example ships `polyfills.js`, imported in `index.js` right after `@web3auth/react-native-sdk/setup`. Keep that import order.
+**`AbortSignal.timeout` / `window.addEventListener` errors** — These come from `@solana/react-hooks` and `@wallet-standard/app` expecting browser APIs that React Native 0.84 still does not ship. This example's `polyfills.js` (imported in `index.js` right after `@web3auth/react-native-sdk/setup`) patches them. Keep that import order.
 
 **`Invalid provider Config, Please provide chain` (code 5008)** — The dashboard has no chain matching `defaultChainId` in `web3authConfig.ts`, or no Solana chain is configured on the dashboard. Add a Solana chain under **Chains** in the dashboard and ensure `defaultChainId` matches its `chainId` (or remove `defaultChainId` to use the first dashboard chain).
 

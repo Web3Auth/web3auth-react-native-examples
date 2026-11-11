@@ -22,7 +22,7 @@ An Expo-managed workflow example that mirrors `rn-bare-quick-start` but uses `ex
 
 ## Tech stack
 
-- Expo SDK `~51`
+- Expo SDK `~51` (React Native `0.74.x` — upgrade to **Expo SDK 56+** / **React Native 0.84+** when available to drop URL polyfills; see [RN 0.84 URL improvements](https://reactnative.dev/blog/2026/02/11/react-native-0.84#url-api-improvements))
 - `@web3auth/react-native-sdk` `^10.0.0`
 - `expo-web-browser` + `expo-secure-store`
 - `@react-native-async-storage/async-storage`
@@ -80,6 +80,8 @@ import * as SecureStore from "expo-secure-store";
 ## Polyfills
 
 `index.ts` imports `@web3auth/react-native-sdk/setup` as the very first line. `metro.config.js` uses `withWeb3Auth()` on top of `expo/metro-config`. `babel.config.js` sets `unstable_transformProfile: "hermes-v0"` for Hermes.
+
+Bare workflow examples in this repo target React Native **0.84+**, where `URL` / `URLSearchParams` are built in. This Expo example still runs on SDK 51 (RN 0.74) until Expo SDK 56 is released.
 
 `react-native-quick-base64` is a direct dependency so Expo autolinks the native module used by `react-native-quick-crypto`.
 

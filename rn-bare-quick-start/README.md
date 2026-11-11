@@ -24,16 +24,16 @@ A minimal bare React Native example showing how to integrate MetaMask Embedded W
 
 ## Tech stack
 
-- React Native `0.74.x` (bare workflow)
+- React Native `0.84.x` (bare workflow; **minimum 0.84** for native URL API — see [RN 0.84 URL improvements](https://reactnative.dev/blog/2026/02/11/react-native-0.84#url-api-improvements))
 - `@web3auth/react-native-sdk` `^10.0.0` — hooks API (`useWeb3AuthConnect`, etc.)
 - `viem` `^2.x`
 - `react-native-encrypted-storage` (session persistence)
 - `@toruslabs/react-native-web-browser` (OAuth in-app browser)
-- `@react-native-async-storage/async-storage` `^1.23.x` (peer for `@metamask/connect-multichain` via `@web3auth/react-native-sdk`)
+- `@react-native-async-storage/async-storage` `^2.x` (peer for `@metamask/connect-multichain` via `@web3auth/react-native-sdk`)
 
 ## Prerequisites
 
-- Node.js `>=18`
+- Node.js `>=22.11` (required by React Native 0.84+)
 - React Native CLI setup — follow the [React Native CLI Quickstart](https://reactnative.dev/docs/environment-setup)
 - Xcode (iOS) or Android Studio (Android)
 - A [Web3Auth Dashboard](https://dashboard.web3auth.io) project
@@ -131,9 +131,11 @@ await disconnect();
 
 ## Polyfills
 
-`index.js` imports `@web3auth/react-native-sdk/setup` as the very first line — this seeds the `crypto`, `Buffer`, and `URL` polyfills that the SDK requires. `metro.config.js` uses `withWeb3Auth()` to alias Node.js built-ins for Metro.
+`index.js` imports `@web3auth/react-native-sdk/setup` as the very first line — this seeds the `crypto` and `Buffer` polyfills that the SDK requires. `metro.config.js` uses `withWeb3Auth()` to alias Node.js built-ins for Metro.
 
-Do not remove either — the SDK will fail to initialise without them.
+React Native 0.84+ ships a standards-compliant `URL` / `URLSearchParams` implementation, so do **not** add `react-native-url-polyfill`.
+
+Do not remove the setup import — the SDK will fail to initialise without it.
 
 ## Troubleshooting
 

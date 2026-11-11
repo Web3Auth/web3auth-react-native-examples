@@ -38,5 +38,15 @@ target 'web3authrnexample' do
       :mac_catalyst_enabled => false,
       # :ccache_enabled => true
     )
+
+    # Some pods (e.g. RNCAsyncStorage's resource bundle) still declare iOS 13.4,
+    # which newer Xcode versions reject. Raise them to React Native's minimum.
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |build_config|
+        if Gem::Version.new(build_config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'].to_s) < Gem::Version.new(min_ios_version_supported)
+          build_config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = min_ios_version_supported
+        end
+      end
+    end
   end
 end

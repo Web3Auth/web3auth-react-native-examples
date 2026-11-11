@@ -28,7 +28,7 @@ Replace the Firebase calls in `lib/firebase.ts` with any JWT provider (AWS Cogni
 
 ## Tech stack
 
-- React Native `0.74.x` (bare workflow)
+- React Native `0.84.x` (bare workflow; **minimum 0.84** for native URL API — see [RN 0.84 URL improvements](https://reactnative.dev/blog/2026/02/11/react-native-0.84#url-api-improvements))
 - `@web3auth/react-native-sdk` `^10.0.0`
 - `@react-native-firebase/auth` `^20.x`
 - `viem` `^2.x`
@@ -36,7 +36,7 @@ Replace the Firebase calls in `lib/firebase.ts` with any JWT provider (AWS Cogni
 
 ## Prerequisites
 
-- Node.js `>=18`, React Native CLI environment, Xcode / Android Studio
+- Node.js `>=22.11` (required by React Native 0.84+), React Native CLI environment, Xcode / Android Studio
 - A Firebase project with the app registered (download `google-services.json` / `GoogleService-Info.plist`)
 - A [Web3Auth Dashboard](https://dashboard.web3auth.io) project with a Firebase Custom Connection
 

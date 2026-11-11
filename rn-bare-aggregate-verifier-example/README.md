@@ -26,14 +26,14 @@ Without grouping, `Google login` and `Email OTP login` produce completely differ
 
 ## Tech stack
 
-- React Native `0.74.x` (bare workflow)
+- React Native `0.84.x` (bare workflow; **minimum 0.84** for native URL API — see [RN 0.84 URL improvements](https://reactnative.dev/blog/2026/02/11/react-native-0.84#url-api-improvements))
 - `@web3auth/react-native-sdk` `^10.0.0`
 - `viem` `^2.x`
 - `@react-native-async-storage/async-storage` `^1.23.x` (peer for `@metamask/connect-multichain` via `@web3auth/react-native-sdk`)
 
 ## Prerequisites
 
-- Node.js `>=18`, React Native CLI environment, Xcode / Android Studio
+- Node.js `>=22.11` (required by React Native 0.84+), React Native CLI environment, Xcode / Android Studio
 - A [Web3Auth Dashboard](https://dashboard.web3auth.io) project with a Grouped Connection configured
 
 ## Dashboard setup

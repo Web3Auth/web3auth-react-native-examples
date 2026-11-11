@@ -54,8 +54,6 @@ function HomeScreen({ useAccountAbstraction, onToggleAA }: HomeScreenProps) {
   const [output, setOutput] = useState("");
   const log = (...args: unknown[]) => setOutput(JSON.stringify(args, null, 2));
 
-  const ethereumProvider = connection!.ethereumProvider!;
-
   // ── Loading ──────────────────────────────────────────────────────────────────
   if (isInitializing) {
     return (
@@ -102,6 +100,9 @@ function HomeScreen({ useAccountAbstraction, onToggleAA }: HomeScreenProps) {
   }
 
   // ── Logged-in screen ─────────────────────────────────────────────────────────
+  // `connection` is null until login completes, so read the provider only after the guards above.
+  const ethereumProvider = connection!.ethereumProvider!;
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.buttonArea}>

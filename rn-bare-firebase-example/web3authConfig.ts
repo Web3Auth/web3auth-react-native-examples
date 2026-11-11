@@ -1,4 +1,4 @@
-import { CHAIN_NAMESPACES, WEB3AUTH_NETWORK, type Web3AuthContextConfig } from "@web3auth/react-native-sdk";
+import { WEB3AUTH_NETWORK, type Web3AuthContextConfig } from "@web3auth/react-native-sdk";
 
 // IMP START - Dashboard Registration
 // Get your Client ID from https://dashboard.web3auth.io

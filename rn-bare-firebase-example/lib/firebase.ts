@@ -1,4 +1,4 @@
-import firebaseAuth from "@react-native-firebase/auth";
+import { getAuth, getIdToken, signInAnonymously } from "@react-native-firebase/auth";
 
 // IMP START - Auth Provider Login
 /**
@@ -9,9 +9,9 @@ import firebaseAuth from "@react-native-firebase/auth";
  * phone number, etc.).  The ID token is the JWT you hand to Web3Auth.
  */
 export async function getFirebaseIdToken(): Promise<string> {
-  const auth = firebaseAuth();
+  const auth = getAuth();
   if (!auth.currentUser) {
-    await auth.signInAnonymously();
+    await signInAnonymously(auth);
   }
 
   const user = auth.currentUser;
@@ -20,6 +20,6 @@ export async function getFirebaseIdToken(): Promise<string> {
   }
 
   // Force-refresh to get the latest token (iat claim within 60 s of current time)
-  return user.getIdToken(true);
+  return getIdToken(user, true);
 }
 // IMP END - Auth Provider Login

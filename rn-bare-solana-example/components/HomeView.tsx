@@ -38,7 +38,8 @@ export function HomeView() {
   const [output, setOutput] = useState("");
   const log = (...args: unknown[]) => setOutput(JSON.stringify(args, null, 2));
 
-  const solanaAddress = accounts![0]!;
+  // `accounts` loads asynchronously after connect — guard before use.
+  const solanaAddress = accounts?.[0];
 
   return (
     <SafeAreaView style={styles.container}>
@@ -46,10 +47,16 @@ export function HomeView() {
         <Button title="Get User Info" onPress={() => log(userInfo)} />
 
         {/* IMP START - Blockchain Calls */}
-        <Button title="Get Solana Address" onPress={() => log(solanaAddress)} />
+        <Button title="Get Solana Address" onPress={() => log(solanaAddress ?? "No Solana account")} />
         <Button
           title="Get Balance"
-          onPress={() => getSolanaBalance(rpc!, solanaAddress).then(log)}
+          onPress={() => {
+            if (!rpc || !solanaAddress) {
+              log("Solana wallet not ready");
+              return;
+            }
+            getSolanaBalance(rpc, solanaAddress).then(log);
+          }}
         />
         <Button
           title="Sign Message"
